@@ -8,7 +8,7 @@
 
 	Created: 11/05/2016
 
-	Edited: 16/05/2016
+	Edited: 17/05/2016
 
 	Description:
 	Script to extract and install the UltraVNC repeater
@@ -28,7 +28,7 @@
 #AutoIt3Wrapper_Res_Language=1046
 #AutoIt3Wrapper_Res_Description=Automated setup for the UltraVNC Repeater
 
-#AutoIt3Wrapper_Outfile=..\..\_TEST\RepeaterWinSetup.exe
+#AutoIt3Wrapper_Outfile=..\..\..\_TEST\RepeaterWinSetup.exe
 
 #EndRegion ### WRAPPER DIRECTIVES ###
 
@@ -49,7 +49,7 @@
 
 #region ### INCLUDES ###
 
-#include ".\includes\_language\TextVariables.au3"
+;~ #include ".\includes\_language\TextVariables.au3"
 #include ".\includes\ResourcesEx.au3"
 #include ".\includes\MetroGUI_UDF.au3"
 
@@ -70,6 +70,10 @@ Global $g_sProgramName = "INTERMIX REPEATER"
 Global $g_sDisclaimerVersion = "0.1.1 A"
 
 Global $g_hMainGui = ""
+Global $g_idButtonInstall = ""
+Global $g_idButtonUninstall = ""
+Global $g_idButtonTutorial = ""
+
 Global $GUI_HOVER_REG_MAIN = ""
 Global $GUI_CLOSE_BUTTON_MAIN = ""
 Global $GUI_MINIMIZE_BUTTON_MAIN = ""
@@ -138,15 +142,15 @@ While 1
 			Case $GUI_MINIMIZE_BUTTON_MAIN
 				GUISetState(@SW_MINIMIZE,$g_hMainGui)
 
-			Case $idButtonInstall
+			Case $g_idButtonInstall
 				_Metro_GUIDelete($GUI_HOVER_REG_MAIN, $g_hMainGui)
 				Setup()
 
-			Case $idButtonUninstall
+			Case $g_idButtonUninstall
 				_Metro_GUIDelete($GUI_HOVER_REG_MAIN, $g_hMainGui)
 				Remove()
 
-			Case $idButtonTutorial
+			Case $g_idButtonTutorial
 				ShellExecute("https://github.com/LFCavalcanti/intermix/wiki")
 
 		;===================================================================================================
@@ -192,7 +196,7 @@ Func HandleInstalledStatus()
 
 	Else ; If the Instant Support is Installed but the Script is not Running from the installed directory
 
-		If MsgBox(4, $g_sProgramTitle, $str_openinstalled) = 6 Then
+		If MsgBox(4, $g_sProgramTitle, "The Repeater is already installed in this system. Open the installed version?") = 6 Then
 			Run($g_sInstExe) ; Run the installed exe
 			Exit
 		EndIf
@@ -345,7 +349,7 @@ Func Setup()
 	; =============================================================================================================================================
 
 	;~ Install the Repeater service
-	ShellExecute($g_sInstDir & "\REPEATER.exe", "-install", $g_sInstDir)
+	ShellExecuteWait($g_sInstDir & "\REPEATER.exe", "-install", $g_sInstDir)
 
 	;Remove Splash Message
 	SplashOff()
@@ -388,66 +392,62 @@ PARAMETERS:........ [Optional] $type = Define removal type, if it is a quiet rem
 Func Remove($type = "")
 
 	;Local Flags
-	Local $quiet = False
-	Local $update = False
-	Local $result = ""
+	Local $bUpdate = False
+	Local $nResult = ""
 
 	;Verify if it is running under admin privileges and set flags
 	If IsAdmin() Then
-		If $type == "/quiet" Then
-			$quiet = True
-		ElseIf $type == "/update" Then
-			$update = True
+		If $type == "/update" Then
+			$bUpdate = True
 		EndIf
 	Else
-		ShellExecute(@ScriptFullPath, "/remove " & $type, @ScriptDir, "runas")
+		ShellExecute(@ScriptFullPath, "/remove", @ScriptDir, "runas")
 		Exit
 	EndIf
 
-	;If not /quiet or /update ask user
-	If Not $quiet And Not $update Then
+	;If not type=="update" ask user
+	If Not $bUpdate Then
 ;~ 		WinSetOnTop($g_sProgramTitle, "", 0)
-		$result = MsgBox(4, $g_sProgramTitle, $str_msgbox_removeservice)
+		$bResult = MsgBox(4, $g_sProgramTitle, "Do you want to remove the service and uninstall?")
 	EndIf
 
-	;If MsgBox returns "yes" or is /quiet or /update remove
-	If $result = 6 Or $quiet Or $update Then
+	;If MsgBox returns "yes" or is update
+	If $bResult = 6 Or $bUpdate Then
 
 		; Disable Main GUI
 		_Metro_GUIDelete($GUI_HOVER_REG_MAIN, $g_hMainGui)
 
 		; Remove shortcuts
-		Local $ini_dir = @ProgramsCommonDir & "\" & $g_sProgramName
-		Local $shortcut = @DesktopCommonDir & "\" & $txtShortcutName & ".lnk"
-		DirRemove($ini_dir, 1)
-		FileDelete($shortcut)
+		Local $sStartDir = @ProgramsCommonDir & "\Intermix Repeater"
+		Local $sShortcutRepeater = @DesktopCommonDir & "\Intermix Repeater\UltraVNC Repeater.lnk"
+		Local $sShortcutTutorial = @DesktopCommonDir & "\Intermix Repeater\Tutorial Repeater.url"
+		DirRemove($sStartDir, 1)
+		FileDelete($sShortcutRepeater)
+		FileDelete($sShortcutTutorial)
 
-		; Stop service
+		; Stop Repeater service
 		RunWait(@ComSpec & " /c " & 'net stop ' & $g_sServiceName, "", @SW_HIDE)
-		RunWait($g_sWorkingPath & "\IntermixVNC.exe -kill")
+
+		;~ Removes the UltraVNC service from the system
+		ShellExecuteWait($g_sInstDir & "\REPEATER.exe", "-uninstall", $g_sInstDir)
 
 		; Remove registry entries
-		RegDelete("HKEY_LOCAL_MACHINE\SOFTWARE\Intermix_Support\" & $str_company_name)
-		RegDelete("HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\" & $g_sServiceName)
+		RegDelete("HKEY_LOCAL_MACHINE\SOFTWARE\Intermix_Support\Repeater")
 		RegDelete("HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\" & $g_sProgramName)
 
-
 		;delete install directory
-		If $update Then
+		If $bUpdate Then
 			DirRemove($g_sInstDir & "\", 1)
 		Else
-			_deleteself(@ProgramFilesDir & "\IntermixSupport\" & $str_company_name, 15)
+			_deleteself(@ProgramFilesDir & "\IntermixSupport\REPEATER", 15)
 		EndIf
 
 		;Asks User to restart the computer
-		If $quiet Then
-			MsgBox(0, $g_sProgramTitle, $str_remove_countrestart, 10)
-			Shutdown(6)
-		ElseIf $update Then
+		If $bUpdate Then
 			Return True
 		Else
-			If MsgBox(4, $g_sProgramTitle, $str_needrestart) == 6 Then
-				Shutdown(6)
+			If MsgBox(4, $g_sProgramTitle, "You need to restart the system to complete the uninstall process." & @CRLF & @CRLF & "Restart now?") == 6 Then
+				Run(@ComSpec & " /c " & 'shutdown /r /f /t 60 /c "Repeater Setup - Your system will restart in 60 seconds..." /d P:4:2')
 			Else
 				Exit
 			EndIf
@@ -491,13 +491,69 @@ Func MainGUI()
 	GUICtrlSetColor(-1, 0x282828)
 	GUICtrlSetBkColor(-1, $GUI_BKCOLOR_TRANSPARENT)
 
-	$idButtonInstall = _Metro_CreateButton($GUI_HOVER_REG_MAIN, $g_sButtonInstall, 90, 177, 130, 40)
+	$g_idButtonInstall = _Metro_CreateButton($GUI_HOVER_REG_MAIN, $g_sButtonInstall, 90, 177, 130, 40)
 
-	$idButtonUninstall = _Metro_CreateButton($GUI_HOVER_REG_MAIN, $g_sButtonUninstall, 90, 237, 130, 40)
+	$g_idButtonUninstall = _Metro_CreateButton($GUI_HOVER_REG_MAIN, $g_sButtonUninstall, 90, 237, 130, 40)
 
-	$idButtonTutorial = _Metro_CreateButton($GUI_HOVER_REG_MAIN, $g_sButtonTutorial, 90, 327, 130, 40)
+	$g_idButtonTutorial = _Metro_CreateButton($GUI_HOVER_REG_MAIN, $g_sButtonTutorial, 90, 327, 130, 40)
 
 	GUISetState(@SW_SHOW, $g_hMainGui)
 
 EndFunc
 ;============> End mainGUI() ================================================================================
+
+
+
+#cs FUNCTION ===========================================================================================
+
+FUNCTION:.......... Func _deleteself($path, $idelay = 5)
+DESCRIPTION:....... FStop services, process and exit aplication
+SYNTAX:............ Func _deleteself($path, $idelay = 5[)
+PARAMETERS:........ $path - path where files where extracted
+					[Optional] $idelay - Time delay to execute operation, Default is 5.
+
+#ce ====================================================================================================
+Func _deleteself($path, $idelay = 5)
+
+	Local $sDelay = ''
+	Local $iInternalDelay = 2
+	Local $sAppID = $path & "\RepeaterWinSetup.exe"
+	Local $sImageName = 'IMAGENAME'
+
+    $iDelay = Int($iDelay)
+    If $iDelay > 0 Then
+        $sDelay = 'IF %TIMER% GTR ' & $iDelay & ' GOTO DELETE'
+    EndIf
+
+	Local $scmdfile
+	FileDelete(@TempDir & "\scratch.bat")
+	$scmdfile = 'SET TIMER=0' & @CRLF _
+				& ':START' & @CRLF _
+				& "PING -n " & $idelay & " 127.0.0.1 > nul" & @CRLF _
+				& $sDelay & @CRLF _
+				& 'SET /A TIMER+=1' & @CRLF _
+				& @CRLF _
+				& 'TASKLIST /NH /FI "' & $sImageName & ' EQ ' & $sAppID & '" | FIND /I "' & $sAppID & '" >nul && GOTO START' & @CRLF _
+				& 'GOTO DELETE' & @CRLF _
+				& @CRLF _
+				& ':DELETE' & @CRLF _
+				& 'TASKKILL /F /FI "' & $sImageName & ' EQ ' & $sAppID & '"' & @CRLF _
+				& 'DEL /F /Q "' & $path & '\RepeaterWinSetup.exe"' & @CRLF _
+				& 'DEL /F /Q "' & $path & '\comment.txt"' & @CRLF _
+				& 'DEL /F /Q "' & $path & '\connections.txt"' & @CRLF _
+				& 'DEL /F /Q "' & $path & '\passwd.txt"' & @CRLF _
+				& 'DEL /F /Q "' & $path & '\unblock.js"' & @CRLF _
+				& 'DEL /F /Q "' & $path & '\REPEATER.exe"' & @CRLF _
+				& 'DEL /F /Q "' & $path & '\server_access.txt"' & @CRLF _
+				& 'DEL /F /Q "' & $path & '\settings.txt"' & @CRLF _
+				& 'DEL /F /Q "' & $path & '\viewer_access.txt"' & @CRLF _
+				& 'RD /S /Q "' & $path & '"' & @CRLF _
+				& 'IF EXIST "' & $path & '" GOTO DELETE' & @CRLF _
+				& 'GOTO END' & @CRLF _
+				& @CRLF _
+				& ':END' & @CRLF _
+				& 'DEL "' & @TempDir & '\scratch.bat"'
+	FileWrite(@TempDir & "\scratch.bat", $scmdfile)
+	Return Run(@TempDir & "\scratch.bat", @TempDir, @SW_HIDE)
+EndFunc
+;============> _deleteself() ==============================================================
