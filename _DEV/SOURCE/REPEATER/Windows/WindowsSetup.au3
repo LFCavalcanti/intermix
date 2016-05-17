@@ -24,8 +24,10 @@
 
 #AutoIt3Wrapper_Icon=img\icon.ico
 #AutoIt3Wrapper_Res_Fileversion=0.1.1
+#AutoIt3Wrapper_Res_Productversion=0.1.1
+#AutoIt3Wrapper_Res_Field=ProductName|Intermix Repeater
 #AutoIt3Wrapper_Res_LegalCopyright=GPL3
-#AutoIt3Wrapper_Res_Language=1046
+;~ #AutoIt3Wrapper_Res_Language=1046
 #AutoIt3Wrapper_Res_Description=Automated setup for the UltraVNC Repeater
 
 #AutoIt3Wrapper_Outfile=..\..\..\_TEST\RepeaterWinSetup.exe
@@ -59,6 +61,8 @@
 
 #region ### VARIABLES ###
 
+Global $sCmdLinePar = ""
+
 Global $g_sButtonInstall = "SETUP"
 Global $g_sButtonUninstall = "REMOVE"
 Global $g_sButtonTutorial = "TUTORIAL"
@@ -73,6 +77,9 @@ Global $g_hMainGui = ""
 Global $g_idButtonInstall = ""
 Global $g_idButtonUninstall = ""
 Global $g_idButtonTutorial = ""
+
+Global $g_bShowButtonInstall = True
+Global $g_bShowButtonUninstall = False
 
 Global $GUI_HOVER_REG_MAIN = ""
 Global $GUI_CLOSE_BUTTON_MAIN = ""
@@ -100,6 +107,11 @@ Global $g_iInstVersion = RegRead("HKEY_LOCAL_MACHINE\SOFTWARE\Intermix_Support\R
 Global $g_sInstService = RegRead("HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\repeater_service", "DisplayName")
 
 #endregion ### REGISTRY VARIABLES ###
+
+;~ ConsoleWrite("DIR: " & $g_sInstDir & @CRLF & @CRLF)
+;~ ConsoleWrite("EXE: " & $g_sInstExe & @CRLF & @CRLF)
+;~ ConsoleWrite("VER: " & $g_iInstVersion & @CRLF & @CRLF)
+;~ ConsoleWrite("SRV: " & $g_sInstService & @CRLF & @CRLF)
 
 
 
@@ -190,15 +202,19 @@ SYNTAX:............ No parameter
 #ce ====================================================================================================
 Func HandleInstalledStatus()
 
-	If $g_sInstExe == @AutoItExe Then;If the Script is running from the installed path
+	If $g_sInstExe == @AutoItExe and $g_bSetupStatus Then;If the Script is running from the installed path
 
 		$g_sWorkingPath = $g_sInstDir ;set the working path to the installed directory
+		$g_bShowButtonInstall = False ;Hides Install Button
+		$g_bShowButtonUninstall = True ;Show Uninstall Button
 
-	Else ; If the Instant Support is Installed but the Script is not Running from the installed directory
+	ElseIf $g_bSetupStatus Then ; If the Instant Support is Installed but the Script is not Running from the installed directory
 
 		If MsgBox(4, $g_sProgramTitle, "The Repeater is already installed in this system. Open the installed version?") = 6 Then
 			Run($g_sInstExe) ; Run the installed exe
 			Exit
+		Else
+			$g_bShowButtonUninstall = True ;Show Uninstall Button
 		EndIf
 	EndIf
 EndFunc
@@ -217,18 +233,26 @@ SYNTAX:............ No parameters passed, uses the cmdline from process calling,
 #ce ====================================================================================================
 Func HandleCmdLineParam()
 
-	Switch $cmdline[1]
+	; Verify if a second parameter is present and read it.
+	If $cmdline[0] > 1 Then
+		$sCmdLinePar = $cmdline[2]
+	EndIf
 
-		Case "/setup"
-			Setup()
+	; Read and call the needed funtion
+	If $cmdline[0] > 0 Then
+		Switch $cmdline[1]
 
-		Case "/remove"
-			Remove()
+			Case "/setup"
+				Setup()
 
-		Case Else
-			Exit
+			Case "/remove"
+				Remove($sCmdLinePar)
 
-	EndSwitch
+			Case Else
+				Exit
+
+		EndSwitch
+	EndIf
 
 EndFunc
 ;============> End HandleCmdLineParam() ==============================================================
@@ -261,7 +285,7 @@ Func Setup()
 		SplashTextOn($g_sProgramTitle, "The Repeater is already installed on this system, removing previous version...", 500, 50, -1, -1, 4, "Arial", 11)
 
 		;Call Remove Function for update
-		Local $bUpdate = Remove()
+		Local $bUpdate = Remove("/update")
 
 		;Verify the update control flag
 		If $bUpdate Then
@@ -310,9 +334,9 @@ Func Setup()
 
 
 	; === DESKTOP SHORTCUTS =======================================================================================================================
-	FileCreateShortcut($g_sInstDir & "\REPEATER.exe", @DesktopCommonDir & "\Intermix Repeater\UltraVNC Repeater.lnk", "")
+	FileCreateShortcut($g_sInstDir & "\REPEATER.exe", @DesktopCommonDir & "\UltraVNC Repeater.lnk", "")
 
-	$hUrlWrite = FileOpen(@DesktopCommonDir & '\Intermix Repeater\Tutorial Repeater.url', 33); unicode write
+	$hUrlWrite = FileOpen(@DesktopCommonDir & '\Tutorial Repeater.url', 33); unicode write
 	FileWrite($hUrlWrite, _
 		'[InternetShortcut]' & @CRLF & _
         'URL=' & "https://github.com/LFCavalcanti/intermix/wiki" & @CRLF & _
@@ -349,7 +373,18 @@ Func Setup()
 	; =============================================================================================================================================
 
 	;~ Install the Repeater service
-	ShellExecuteWait($g_sInstDir & "\REPEATER.exe", "-install", $g_sInstDir)
+	ShellExecute($g_sInstDir & "\REPEATER.exe", "-install", $g_sInstDir)
+
+	;~ Waits for the Repeater Service MsgBox
+	WinWait( "repeater_service" )
+	ControlClick("repeater_service", "OK", "[CLASS:Button; INSTANCE:1]", "primary" )
+
+	;~ Refresh Desktop
+	WinActivate("Program Manager")
+	Send("{F5}")
+
+	;~ Wait half a second before removing the Splash and MsgBoxes
+	Sleep(500)
 
 	;Remove Splash Message
 	SplashOff()
@@ -366,12 +401,15 @@ Func Setup()
 
 	MsgBox(0, $g_sProgramTitle, "In order for the UltraVNC Repeater Service to start correctly, you must reboot the system." & @CRLF & @CRLF & "Don't forget to do so after the initial configuration!")
 
-	If $bOpenRepeater Then
-		Run($g_sInstDir & "\REPEATER.exe", $g_sInstDir)
-	EndIf
-
 	If $bOpenTutorial Then
 		ShellExecute("https://github.com/LFCavalcanti/intermix/wiki")
+	EndIf
+
+	If $bOpenRepeater Then
+		Run($g_sInstDir & "\REPEATER.exe", $g_sInstDir)
+		Local $hRepeater = WinWait("UltraVNC_Repeater")
+		WinSetState($hRepeater, "UltraVNC_Repeater", @SW_RESTORE)
+		WinActivate($hRepeater)
 	EndIf
 
 	Exit
@@ -383,13 +421,13 @@ EndFunc
 
 #cs FUNCTION ===========================================================================================
 
-FUNCTION:.......... remove($type = "")
+FUNCTION:.......... remove($sType = "")
 DESCRIPTION:....... Remove ou instala o Intermix
-SYNTAX:............ remove($type = "/quiet"[)
-PARAMETERS:........ [Optional] $type = Define removal type, if it is a quiet removal or update, default is "")
+SYNTAX:............ remove($sType = "/update"[)
+PARAMETERS:........ [Optional] $sType = Define removal type, if it is a quiet removal or update, default is "")
 
 #ce ====================================================================================================
-Func Remove($type = "")
+Func Remove($sType = "")
 
 	;Local Flags
 	Local $bUpdate = False
@@ -397,39 +435,51 @@ Func Remove($type = "")
 
 	;Verify if it is running under admin privileges and set flags
 	If IsAdmin() Then
-		If $type == "/update" Then
+		If $sType == "/update" Then
 			$bUpdate = True
 		EndIf
 	Else
-		ShellExecute(@ScriptFullPath, "/remove", @ScriptDir, "runas")
+		ShellExecute(@ScriptFullPath, "/remove " & $sType, @ScriptDir, "runas")
 		Exit
 	EndIf
 
-	;If not type=="update" ask user
+	;If not update ask user
 	If Not $bUpdate Then
 ;~ 		WinSetOnTop($g_sProgramTitle, "", 0)
-		$bResult = MsgBox(4, $g_sProgramTitle, "Do you want to remove the service and uninstall?")
+		$nResult = MsgBox(4, $g_sProgramTitle, "Do you want to remove the service and uninstall?")
 	EndIf
 
 	;If MsgBox returns "yes" or is update
-	If $bResult = 6 Or $bUpdate Then
+	If $nResult = 6 Or $bUpdate Then
 
 		; Disable Main GUI
 		_Metro_GUIDelete($GUI_HOVER_REG_MAIN, $g_hMainGui)
 
 		; Remove shortcuts
 		Local $sStartDir = @ProgramsCommonDir & "\Intermix Repeater"
-		Local $sShortcutRepeater = @DesktopCommonDir & "\Intermix Repeater\UltraVNC Repeater.lnk"
-		Local $sShortcutTutorial = @DesktopCommonDir & "\Intermix Repeater\Tutorial Repeater.url"
+		Local $sShortcutRepeater = @DesktopCommonDir & "\UltraVNC Repeater.lnk"
+		Local $sShortcutTutorial = @DesktopCommonDir & "\Tutorial Repeater.url"
 		DirRemove($sStartDir, 1)
 		FileDelete($sShortcutRepeater)
 		FileDelete($sShortcutTutorial)
+
+		;~ Refresh Desktop
+		WinActivate("Program Manager")
+		Send("{F5}")
 
 		; Stop Repeater service
 		RunWait(@ComSpec & " /c " & 'net stop ' & $g_sServiceName, "", @SW_HIDE)
 
 		;~ Removes the UltraVNC service from the system
-		ShellExecuteWait($g_sInstDir & "\REPEATER.exe", "-uninstall", $g_sInstDir)
+		ShellExecute($g_sInstDir & "\REPEATER.exe", "-uninstall", $g_sInstDir)
+
+		;~ Waits for the Repeater Service MsgBox
+		WinWait("repeater_service")
+		ControlClick("repeater_service", "OK", "[CLASS:Button; INSTANCE:1]", "primary" )
+
+		;~ If the process is still running, kill it
+		Local $hPID = ProcessExists("REPEATER.exe")
+		ProcessClose($hPID)
 
 		; Remove registry entries
 		RegDelete("HKEY_LOCAL_MACHINE\SOFTWARE\Intermix_Support\Repeater")
@@ -447,7 +497,8 @@ Func Remove($type = "")
 			Return True
 		Else
 			If MsgBox(4, $g_sProgramTitle, "You need to restart the system to complete the uninstall process." & @CRLF & @CRLF & "Restart now?") == 6 Then
-				Run(@ComSpec & " /c " & 'shutdown /r /f /t 60 /c "Repeater Setup - Your system will restart in 60 seconds..." /d P:4:2')
+				Run('shutdown /r /f /t 60 /c "Repeater Setup - Your system will restart in 60 seconds..." /d P:4:2')
+				Exit
 			Else
 				Exit
 			EndIf
