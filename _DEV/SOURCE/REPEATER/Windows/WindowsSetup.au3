@@ -8,7 +8,7 @@
 
 	Created: 11/05/2016
 
-	Edited: 17/05/2016
+	Edited: 18/05/2016
 
 	Description:
 	Script to extract and install the UltraVNC repeater
@@ -27,7 +27,6 @@
 #AutoIt3Wrapper_Res_Productversion=0.1.1
 #AutoIt3Wrapper_Res_Field=ProductName|Intermix Repeater
 #AutoIt3Wrapper_Res_LegalCopyright=GPL3
-;~ #AutoIt3Wrapper_Res_Language=1046
 #AutoIt3Wrapper_Res_Description=Automated setup for the UltraVNC Repeater
 
 #AutoIt3Wrapper_Outfile=..\..\..\_TEST\RepeaterWinSetup.exe
@@ -51,7 +50,6 @@
 
 #region ### INCLUDES ###
 
-;~ #include ".\includes\_language\TextVariables.au3"
 #include ".\includes\ResourcesEx.au3"
 #include ".\includes\MetroGUI_UDF.au3"
 
@@ -97,7 +95,6 @@ Global $g_nMinorVersion = "0x00000001"
 #EndRegion ### VARIABLES ###
 
 
-
 #region ### REGISTRY VARIABLES ###
 
 ; Read Registry Key for a possible existing installation
@@ -107,12 +104,6 @@ Global $g_iInstVersion = RegRead("HKEY_LOCAL_MACHINE\SOFTWARE\Intermix_Support\R
 Global $g_sInstService = RegRead("HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\repeater_service", "DisplayName")
 
 #endregion ### REGISTRY VARIABLES ###
-
-;~ ConsoleWrite("DIR: " & $g_sInstDir & @CRLF & @CRLF)
-;~ ConsoleWrite("EXE: " & $g_sInstExe & @CRLF & @CRLF)
-;~ ConsoleWrite("VER: " & $g_iInstVersion & @CRLF & @CRLF)
-;~ ConsoleWrite("SRV: " & $g_sInstService & @CRLF & @CRLF)
-
 
 
 #Region ### START UP PROCEDURES ###
@@ -146,7 +137,7 @@ While 1
 		$MainMsg = GUIGetMsg()
 
 		Switch $MainMsg
-		;=========================================Control-Buttons===========================================
+
 			Case $GUI_EVENT_CLOSE, $GUI_CLOSE_BUTTON_MAIN
 				_Metro_GUIDelete($GUI_HOVER_REG_MAIN, $g_hMainGui)
 				Exit
@@ -154,19 +145,28 @@ While 1
 			Case $GUI_MINIMIZE_BUTTON_MAIN
 				GUISetState(@SW_MINIMIZE,$g_hMainGui)
 
-			Case $g_idButtonInstall
-				_Metro_GUIDelete($GUI_HOVER_REG_MAIN, $g_hMainGui)
-				Setup()
-
-			Case $g_idButtonUninstall
-				_Metro_GUIDelete($GUI_HOVER_REG_MAIN, $g_hMainGui)
-				Remove()
-
 			Case $g_idButtonTutorial
 				ShellExecute("https://github.com/LFCavalcanti/intermix/wiki")
 
-		;===================================================================================================
 		EndSwitch
+
+		;===================================================================================================
+
+		If $g_bShowButtonInstall And $MainMsg = $g_idButtonInstall Then
+			_Metro_GUIDelete($GUI_HOVER_REG_MAIN, $g_hMainGui)
+			Setup()
+		EndIf
+
+		If $g_bShowButtonUninstall And $MainMsg = $g_idButtonUninstall Then
+			_Metro_GUIDelete($GUI_HOVER_REG_MAIN, $g_hMainGui)
+			Remove()
+		EndIf
+
+		Sleep(50)
+		ContinueLoop
+
+	Else
+		Sleep(200)
 	EndIf
 
 WEnd
@@ -300,7 +300,7 @@ Func Setup()
 
 	Else
 
-		$g_sInstDir = @ProgramFilesDir & "\IntermixSupport\REPEATER\"
+		$g_sInstDir = @ProgramFilesDir & "\IntermixSupport\REPEATER"
 
 	EndIf
 
@@ -445,7 +445,6 @@ Func Remove($sType = "")
 
 	;If not update ask user
 	If Not $bUpdate Then
-;~ 		WinSetOnTop($g_sProgramTitle, "", 0)
 		$nResult = MsgBox(4, $g_sProgramTitle, "Do you want to remove the service and uninstall?")
 	EndIf
 
@@ -542,9 +541,13 @@ Func MainGUI()
 	GUICtrlSetColor(-1, 0x282828)
 	GUICtrlSetBkColor(-1, $GUI_BKCOLOR_TRANSPARENT)
 
-	$g_idButtonInstall = _Metro_CreateButton($GUI_HOVER_REG_MAIN, $g_sButtonInstall, 90, 177, 130, 40)
+	If $g_bShowButtonInstall Then
+		$g_idButtonInstall = _Metro_CreateButton($GUI_HOVER_REG_MAIN, $g_sButtonInstall, 90, 177, 130, 40)
+	EndIf
 
-	$g_idButtonUninstall = _Metro_CreateButton($GUI_HOVER_REG_MAIN, $g_sButtonUninstall, 90, 237, 130, 40)
+	If $g_bShowButtonUninstall Then
+		$g_idButtonUninstall = _Metro_CreateButton($GUI_HOVER_REG_MAIN, $g_sButtonUninstall, 90, 237, 130, 40)
+	EndIf
 
 	$g_idButtonTutorial = _Metro_CreateButton($GUI_HOVER_REG_MAIN, $g_sButtonTutorial, 90, 327, 130, 40)
 
