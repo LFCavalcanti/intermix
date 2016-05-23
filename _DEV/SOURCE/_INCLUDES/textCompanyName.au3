@@ -1,3 +1,3 @@
-$str_company_name = "COMPANY"
-$str_program_title = "INTERMIX - " & $str_company_name
-$str_program_name = "INTERMIX " & $str_company_name
+Global $_g_sCompanyName = "COMPANY"
+Global $_g_sProgramTitle = "INTERMIX - " & $_g_sCompanyName
+$_g_sProgramName = "INTERMIX " & $_g_sCompanyName

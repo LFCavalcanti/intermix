@@ -59,12 +59,12 @@
 
 #region ### VARIABLES ###
 
-Global $sCmdLinePar = ""
+Global $g_CmdParamTwo = ""
 
-Global $g_sButtonInstall = "SETUP"
-Global $g_sButtonUninstall = "REMOVE"
-Global $g_sButtonTutorial = "TUTORIAL"
-Global $g_sLabelTitle = "REPEATER"
+Global $g_sButton_Install = "SETUP"
+Global $g_sButton_Uninstall = "REMOVE"
+Global $g_sButton_Tutorial = "TUTORIAL"
+Global $g_sLabel_Title = "REPEATER"
 
 Global $g_sProgramTitle = "INTERMIX REPEATER - SETUP"
 Global $g_sProgramName = "INTERMIX REPEATER"
@@ -235,7 +235,7 @@ Func HandleCmdLineParam()
 
 	; Verify if a second parameter is present and read it.
 	If $cmdline[0] > 1 Then
-		$sCmdLinePar = $cmdline[2]
+		$g_CmdParamTwo = $cmdline[2]
 	EndIf
 
 	; Read and call the needed funtion
@@ -246,7 +246,7 @@ Func HandleCmdLineParam()
 				Setup()
 
 			Case "/remove"
-				Remove($sCmdLinePar)
+				Remove($g_CmdParamTwo)
 
 			Case Else
 				Exit
@@ -536,20 +536,20 @@ Func MainGUI()
 	$idImgBarMain = GUICtrlCreatePic("", 0, 107, 310, 50)
 	_Resource_SetToCtrlID($idImgBarMain, "IMG_BARREPEATER")
 
-	$idLabelMainTitle = GUICtrlCreateLabel($g_sLabelTitle, 85, 117, 150, 45)
+	$idLabelMainTitle = GUICtrlCreateLabel($g_sLabel_Title, 85, 117, 150, 45)
 	GUICtrlSetFont(-1, 20, 700, 0, "Arial", 5)
 	GUICtrlSetColor(-1, 0x282828)
 	GUICtrlSetBkColor(-1, $GUI_BKCOLOR_TRANSPARENT)
 
 	If $g_bShowButtonInstall Then
-		$g_idButtonInstall = _Metro_CreateButton($GUI_HOVER_REG_MAIN, $g_sButtonInstall, 90, 177, 130, 40)
+		$g_idButtonInstall = _Metro_CreateButton($GUI_HOVER_REG_MAIN, $g_sButton_Install, 90, 177, 130, 40)
 	EndIf
 
 	If $g_bShowButtonUninstall Then
-		$g_idButtonUninstall = _Metro_CreateButton($GUI_HOVER_REG_MAIN, $g_sButtonUninstall, 90, 237, 130, 40)
+		$g_idButtonUninstall = _Metro_CreateButton($GUI_HOVER_REG_MAIN, $g_sButton_Uninstall, 90, 237, 130, 40)
 	EndIf
 
-	$g_idButtonTutorial = _Metro_CreateButton($GUI_HOVER_REG_MAIN, $g_sButtonTutorial, 90, 327, 130, 40)
+	$g_idButtonTutorial = _Metro_CreateButton($GUI_HOVER_REG_MAIN, $g_sButton_Tutorial, 90, 327, 130, 40)
 
 	GUISetState(@SW_SHOW, $g_hMainGui)
 
