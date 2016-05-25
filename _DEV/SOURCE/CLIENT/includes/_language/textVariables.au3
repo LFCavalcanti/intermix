@@ -5,14 +5,16 @@ Global $_g_sLabel_ID = "ID"
 Global $_g_sLabel_Status = "STATUS"
 Global $_g_sLabel_Contact = "CONTATO"
 Global $_g_sLabel_Support = "SUPORTE"
-Global $_g_sLabel_TelA = "(00) 0000-0000"
-Global $_g_sLabel_TelB = "(00) 0000-0000"
-Global $_g_sLabel_Email = "email@company.com"
-Global $_g_sLabel_Site = "www.company.com"
+Global $_g_sLabel_TelA = "(19) 4117-1560"
+Global $_g_sLabel_TelB = "(19) 3515-7300"
+Global $_g_sLabel_Email = "suporte@arriviera.com.br"
+Global $_g_sLabel_Site = "www.arriviera.com.br"
 Global $_g_sShortcutName = $_g_sLabel_Support & " " & $_g_sCompanyName
 Global $_g_sRemoveShortcutName = "Desinstalar " & $_g_sShortcutName
 
 Global $_g_sConfigTitle = $_g_sLabel_Support & " - " & $_g_sCompanyName
+
+Global $_g_sSplash_Removing = "Desinstalando o Intermix Support, aguarde..."
 
 Global $_g_sMsgBox_ServiceInstall = "Instalação do serviço"
 

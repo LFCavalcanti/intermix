@@ -5,13 +5,13 @@
 #AutoIt3Wrapper_Outfile=..\..\COMPILADO\VIEWER\IntermixViewer.Exe
 
 #NoTrayIcon
-#include "..\Aut2Exe\Include\ButtonConstants.au3"
-#include "..\Aut2Exe\Include\ComboConstants.au3"
-#include "..\Aut2Exe\Include\GUIConstantsEx.au3"
-#include "..\Aut2Exe\Include\WindowsConstants.au3"
-#include "..\Aut2Exe\Include\GuiComboBox.au3"
-#include "..\Aut2Exe\Include\EditConstants.au3"
-#include "..\Aut2Exe\Include\GuiComboBoxEx.au3"
+#include <ButtonConstants.au3>
+#include <ComboConstants.au3>
+#include <GUIConstantsEx.au3>
+#include <WindowsConstants.au3>
+#include <GuiComboBox.au3>
+#include <EditConstants.au3>
+#include <GuiComboBoxEx.au3>
 
 ; Exit if the script hasn't been compiled
 If Not @Compiled Then
@@ -217,7 +217,7 @@ While 1
 			; Save IDList in chunkviewer.ini
 			IniWrite( @ScriptDir & "\Bin\viewer.ini", "IntermixViewer", "List", $IDList )
 
-			Exit
+;~ 			Exit
 
 
 	EndSwitch

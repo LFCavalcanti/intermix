@@ -105,11 +105,9 @@ Global $_g_sLabel_VersionMain = "0.1.0 A"
 Global $g_sMajorVersion = "0x00000001"
 Global $g_sMinorVersion = "0x00000000"
 Global $g_iVersion = 11
-;~ Global $sTypeSetup = ""
 Global $g_iSetupStatus = 0
 Global $g_sWorkingPath = @AppDataDir & "\Intermix_Temp_Files"
 Global $g_CmdParamTwo = ""
-;~ Global $nSocket = 0
 Global $g_sServiceName = "IntermixSupport_" & $_g_sCompanyName
 Global $g_bConnStatus = False
 Global $g_bTmpFiles = False
@@ -131,6 +129,9 @@ Global $g_sInstServiceName = RegRead("HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSe
 
 #Region ### START UP ###
 
+;~ CHECK IF THE SOFTWARE IS INSTALED IN THE SYSTEM
+VerifySetupStatus()
+
 ;~ HANDLE COMMAND LINE PARAMETERS
 HandleCmdLine()
 
@@ -144,12 +145,6 @@ Sleep(200)
 #EndRegion ### START UP ###
 
 #region ### INICIALIZATION PROCEDURES ###
-
-;Advanced Progressbar
-StartProgressBar(1,10)
-
-;~ CHECK IF THE SOFTWARE IS INSTALED IN THE SYSTEM
-VerifySetupStatus()
 
 ;Advanced Progressbar
 StartProgressBar(1,10)
@@ -426,9 +421,16 @@ Func ExtractTempFiles()
 	FileInstall("files\intermix.ini", $g_sWorkingPath & "\intermix.ini", 1)
 	FileInstall("files\SecureVNCPlugin.dsm", $g_sWorkingPath & "\SecureVNCPlugin.dsm", 1)
 	FileInstall("files\ultravnc.ini", $g_sWorkingPath & "\ultravnc.ini", 1)
-	FileInstall("files\winvnc.exe", $g_sWorkingPath & "\IntermixVNC.exe", 1)
 	FileInstall("files\unblock.js", $g_sWorkingPath & "\unblock.js", 1)
+	FileInstall("files\vnchooks.dll", $g_sWorkingPath & "\vnchooks.dll", 1)
+	FileInstall("files\logmessages.dll", $g_sWorkingPath & "\logmessages.dll", 1)
 	FileInstall("files\First_Server_ClientAuth.pubkey", $g_sWorkingPath & "\First_Server_ClientAuth.pubkey", 1)
+
+	If @OSVersion = "WIN_XP" Then
+		FileInstall("files\winvnc_xp.exe", $g_sWorkingPath & "\IntermixVNC.exe", 1)
+	Else
+		FileInstall("files\winvnc.exe", $g_sWorkingPath & "\IntermixVNC.exe", 1)
+	EndIf
 
 	ShellExecuteWait($g_sWorkingPath & "\unblock.js", "", @ScriptDir, "")
 
@@ -559,6 +561,9 @@ Func VncConnection($bReconnect = False)
 		;Stop the service
 		RunWait(@ComSpec & " /c " & 'net stop ' & $g_sServiceName, "", @SW_HIDE)
 
+		;Write the current ID to the service config file
+		IniWrite($g_sWorkingPath & "\ultravnc.ini", "admin", "service_commandline", "-autoreconnect ID:" & $g_iNumId & " -connect " & $_g_aRepeaterIp[$g_nRepeaterIndex] & ":" & $_g_aRepeaterPort[$g_nRepeaterIndex])
+
 		;Start the service
 		RunWait(@ComSpec & " /c " & 'net start ' & $g_sServiceName, "", @SW_HIDE)
 
@@ -638,8 +643,6 @@ Func Setup($sType = "/station")
 	Local $bServerSetup = False
 	Local $bServerSetupData = False
 	Local $nKeepConfig = 7
-;~ 	Local $bIDInvalid = True
-;~ 	Local $RepInvalid = True
 	Local $bUpdate = False
 	Local $sTypeSetup = "Workstation"
 	Local $iRepIndex = 0
@@ -656,41 +659,14 @@ Func Setup($sType = "/station")
 		ElseIf $sType == "/quiet" Then
 			$bQuiet = True
 		EndIf
-	Else ;If not, run it as admin
-		_deleteself($g_sWorkingPath, 5)
+		Else ;If not, run it as admin
+		$pid = Run($g_sWorkingPath & "\IntermixVNC.exe -kill")
+		ProcessWaitClose($pid, 15)
+		_deleteself($g_sWorkingPath, 1)
+		DirRemove($g_sWorkingPath & "\", 1)
 		ShellExecute(@ScriptFullPath, "/setup " & $sType, @ScriptDir, "runas")
 		Exit
 	EndIf
-
-	; Request and validate the ID
-;~ 	If $bServerSetup Then
-;~ 		While $bIDInvalid
-;~ 			WinSetOnTop($_g_sProgramTitle, "", 0)
-;~ 			$g_iNumId = InputBox($_g_sMsgBox_ServiceInstall, $_g_sMsgBox_InputID, $g_iNumId,"",200,125)
-;~ 			If $g_iNumId < 200000 And $g_iNumId > 100000 Then
-;~ 				$bIDInvalid = False
-;~ 			Else
-;~ 				If MsgBox(1, $_g_sConfigTitle, $_g_sMsgBox_InvalidID) == 2 Then
-;~ 					_deleteself($g_sWorkingPath, 5)
-;~ 					Exit ; Chamar função para fechar aplicação ou simplesmente interromper e returnar valor
-;~ 				EndIf
-;~ 			EndIf
-;~ 		WEnd
-;~ 	EndIf
-
-	; If server, request Repeater to be used
-;~ 	If $bServerSetup Then
-;~ 		While $RepInvalid
-;~ 			$iRepIndex = InputBox($_g_sMsgBox_RepeaterIndexTitle,$_g_sMsgBox_RepeaterIndex,"","",200,150)
-;~ 			If $iRepIndex >= 0 And $iRepIndex < 4 Then
-;~ 				$g_nRepeaterIndex = $iRepIndex
-;~ 				$RepInvalid = False
-;~ 			ElseIf @error = 1 Then
-;~ 				_deleteself($g_sWorkingPath, 5)
-;~ 				Exit
-;~ 			EndIf
-;~ 		WEnd
-;~ 	EndIf
 
 	; Disable Main GUI
 	_Metro_GUIDelete($GUI_HOVER_REG_MAIN, $g_hMainGUI)
@@ -741,14 +717,22 @@ Func Setup($sType = "/station")
 	;Show message about setup
 	SplashTextOn($_g_sProgramTitle, $_g_sSplash_Setup, 500, 50, -1, -1, 4, "Arial", 11)
 
-	;Install the files
+	;=== INSTALL FILES ======================================================================================
 	DirCreate($g_sInstDir)
 
 	FileInstall("files\SecureVNCPlugin.dsm", $g_sInstDir & "\SecureVNCPlugin.dsm", 1)
 	FileInstall("files\ultravnc.ini", $g_sInstDir & "\ultravnc.ini", 1)
-	FileInstall("files\winvnc.exe", $g_sInstDir & "\IntermixVNC.exe", 1)
 	FileInstall("files\unblock.js", $g_sInstDir & "\unblock.js", 1)
+	FileInstall("files\vnchooks.dll", $g_sInstDir & "\vnchooks.dll", 1)
+	FileInstall("files\logmessages.dll", $g_sInstDir & "logmessages.dll", 1)
 	FileInstall("files\First_Server_ClientAuth.pubkey", $g_sInstDir & "\First_Server_ClientAuth.pubkey", 1)
+
+	If @OSVersion = "WIN_XP" Then
+		FileInstall("files\winvnc_xp.exe", $g_sInstDir & "\IntermixVNC.exe", 1)
+	Else
+		FileInstall("files\winvnc.exe", $g_sInstDir & "\IntermixVNC.exe", 1)
+	EndIf
+	;========================================================================================================
 
 	ShellExecuteWait($g_sInstDir & "\unblock.js", "", @ScriptDir, "")
 	FileCopy(@ScriptDir & "\" & @ScriptName, $g_sInstDir & "\IntermixClient.exe", 9)
@@ -764,22 +748,10 @@ Func Setup($sType = "/station")
 	; Create Desktop shortcut
 	FileCreateShortcut(@ProgramFilesDir & "\IntermixSupport\" & $_g_sCompanyName & "\IntermixClient.exe", @DesktopCommonDir & "\" & $_g_sShortcutName & ".lnk", "")
 
-	; Create Service Keys
-	RegWrite("HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\" & $g_sServiceName, "DependOnService", "REG_MULTI_SZ", "Tcpip")
+	; CREATE VNC SERVICE AS DEMAND
+	RunWait(@ComSpec & " /c " & 'sc create ' & $g_sServiceName & ' binPath= "\"' & $g_sInstDir & '\IntermixVNC.exe\" -service" type= own start= demand tag= no error= normal depend= Tcpip DisplayName= ' & $g_sServiceName & ' obj= LocalSystem', "", @SW_HIDE)
 	RegWrite("HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\" & $g_sServiceName, "Description", "REG_SZ", "Instant Support Service for " & $_g_sCompanyName)
-	RegWrite("HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\" & $g_sServiceName, "DisplayName", "REG_SZ", $g_sServiceName)
-	RegWrite("HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\" & $g_sServiceName, "ErrorControl", "REG_DWORD", "0x00000001")
-	RegWrite("HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\" & $g_sServiceName, "ImagePath", "REG_EXPAND_SZ", '"' & @ProgramFilesDir & "\IntermixSupport\" & $_g_sCompanyName & '\IntermixVNC.exe" -service')
-	RegWrite("HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\" & $g_sServiceName, "ObjectName", "REG_SZ", "LocalSystem")
-	RegWrite("HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\" & $g_sServiceName, "Type", "REG_DWORD", "0x00000010")
 	RegWrite("HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\" & $g_sServiceName, "WOW64", "REG_DWORD", "0x00000001")
-
-	;Write Start Flag of the service for "On Demand" in case it is a Workstation
-	If $bServerSetup Then
-		RegWrite("HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\" & $g_sServiceName, "Start", "REG_DWORD", "0x00000002")
-	Else
-		RegWrite("HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\" & $g_sServiceName, "Start", "REG_DWORD", "0x00000003")
-	EndIf
 
 	; Create Program Keys
 	RegWrite("HKEY_LOCAL_MACHINE\SOFTWARE\Intermix_Support\" & $_g_sCompanyName, "SupportTeam", "REG_SZ", $_g_sCompanyName)
@@ -806,13 +778,54 @@ Func Setup($sType = "/station")
 	RegWrite("HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\" & $_g_sProgramName, "EstimatedSize", "REG_DWORD", "0x0000123D")
 	RegWrite("HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\" & $_g_sProgramName, "sEstimatedSize2", "REG_DWORD", "0x00001233")
 
+	;Write the install directory to the UltraVNC Ini file
+	IniWrite($g_sInstDir & "\ultravnc.ini", "admin", "path", $g_sInstDir)
 
-
-
-	; If server type, write ID and repeater index to register
+	;PROCEDURES IF IT IS A SERVER SETUP ==============================================
 	If $bServerSetup Then
+
+		; Write ID and repeater index to register
 		RegWrite("HKEY_LOCAL_MACHINE\SOFTWARE\Intermix_Support\" & $_g_sCompanyName, "ID", "REG_SZ", $g_iNumId)
 		RegWrite("HKEY_LOCAL_MACHINE\SOFTWARE\Intermix_Support\" & $_g_sCompanyName, "Repeater", "REG_SZ", $g_nRepeaterIndex)
+
+		;Write the current ID to the service config file
+		IniWrite($g_sInstDir & "\ultravnc.ini", "admin", "service_commandline", "-autoreconnect ID:" & $g_iNumId & " -connect " & $_g_aRepeaterIp[$g_nRepeaterIndex] & ":" & $_g_aRepeaterPort[$g_nRepeaterIndex])
+
+		;Start VNC Service
+		RunWait(@ComSpec & " /c " & 'net start ' & $g_sServiceName, "", @SW_HIDE)
+
+		Sleep(1000)
+
+		;Stop VNC Service
+		RunWait(@ComSpec & " /c " & 'net stop ' & $g_sServiceName, "", @SW_HIDE)
+
+		;Modify Service Permissions to allow all users to stop and start it
+		Run(@ComSpec & ' /c ' & 'sc sdset "' & $g_sServiceName & '" D:(A;;CCLCSWRPWPDTLOCRRC;;;SY)(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;BA)(A;;CCLCSWLOCRRC;;;IU)(A;;CCLCSWLOCRRC;;;SU)(A;;RPWPCR;;;WD) S:(AU;FA;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;WD)', "", @SW_HIDE)
+
+		;Sets VNC Service as Auto Start
+		RunWait(@ComSpec & " /c " & 'sc config ' & $g_sServiceName & ' start= auto', "", @SW_HIDE)
+
+		;Start VNC Service
+		RunWait(@ComSpec & " /c " & 'net start ' & $g_sServiceName, "", @SW_HIDE)
+
+
+	;PROCEDURES IF IT IS A CLIENT SETUP ==============================================
+	Else
+
+		;Write the current ID to the service config file
+		IniWrite($g_sInstDir & "\ultravnc.ini", "admin", "service_commandline", "-sc_exit -sc_prompt -multi -autoreconnect ID:" & $g_iNumId & " -connect " & $_g_aRepeaterIp[$g_nRepeaterIndex] & ":" & $_g_aRepeaterPort[$g_nRepeaterIndex])
+
+		;Start VNC Service
+		RunWait(@ComSpec & " /c " & 'net start ' & $g_sServiceName, "", @SW_HIDE)
+
+		Sleep(1000)
+
+		;Stop VNC Service
+		RunWait(@ComSpec & " /c " & 'net stop ' & $g_sServiceName, "", @SW_HIDE)
+
+		;Modify Service Permissions to allow all users to stop and start it
+		Run(@ComSpec & ' /c ' & 'sc sdset "' & $g_sServiceName & '" D:(A;;CCLCSWRPWPDTLOCRRC;;;SY)(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;BA)(A;;CCLCSWLOCRRC;;;IU)(A;;CCLCSWLOCRRC;;;SU)(A;;RPWPCR;;;WD) S:(AU;FA;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;WD)', "", @SW_HIDE)
+
 	EndIf
 
 	;Verify System Language and Set ultravnc.ini permissions
@@ -820,22 +833,6 @@ Func Setup($sType = "/station")
 		RunWait('cacls ultravnc.ini /e /g todos:f', $g_sInstDir, @SW_HIDE)
 	Else
 		RunWait('cacls ultravnc.ini /e /g everyone:f', $g_sInstDir, @SW_HIDE)
-	EndIf
-
-	;Modify Service Permissions to allow all users to stop and start it
-	Run(@ComSpec & ' /c ' & 'sc sdset "' & $g_sServiceName & '" D:(A;;CCLCSWRPWPDTLOCRRC;;;SY)(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;BA)(A;;CCLCSWLOCRRC;;;IU)(A;;CCLCSWLOCRRC;;;SU)(A;;RPWPCR;;;WD) S:(AU;FA;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;WD)', "", @SW_HIDE)
-
-	;Start VNC as Service
-	Local $sResultVNCStart = RunWait(@ComSpec & " /c " & 'net start ' & $g_sServiceName, "", @SW_HIDE)
-	If @error Then
-		MsgBox(0, $_g_sMsgBox_GeneralError, $_g_sMsgBox_ServiceRestartMsg & @CRLF & @CRLF & $_g_sMsgBox_GeneralError & $sResultVNCStart)
-		MsgBox(0, $_g_sMsgBox_GeneralError, $_g_sMsgBox_ServiceRestartEnd)
-		Remove($sType)
-	EndIf
-
-	;If not a server install, then stop the service
-	If Not $bServerSetup Then
-		RunWait(@ComSpec & " /c " & 'net stop ' & $g_sServiceName, "", @SW_HIDE)
 	EndIf
 
 	;Modify the Local GPO do allow VNC to generate Keyboard Inputs such as Ctrl+Alt+Del
@@ -893,12 +890,16 @@ Func Remove($sType = "")
 
 	;If not /quiet nor /update ask user
 	If Not $bQuiet And Not $bUpdate Then
-;~ 		WinSetOnTop($_g_sProgramTitle, "", 0)
 		$iResultAskRemove = MsgBox(4, $_g_sProgramTitle, $_g_sMsgBox_RemoveService)
 	EndIf
 
 	;If MsgBox returns "yes" or is /quiet or /update remove
 	If $iResultAskRemove = 6 Or $bQuiet Or $bUpdate Then
+
+		If Not $bQuiet Or Not $bUpdate Then
+			; Show message about the uninstall
+			SplashTextOn($_g_sProgramTitle, $_g_sSplash_Removing, 500, 50, -1, -1, 4, "Arial", 11)
+		EndIf
 
 		; Disable Main GUI
 		_Metro_GUIDelete($GUI_HOVER_REG_MAIN, $g_hMainGUI)
@@ -915,15 +916,22 @@ Func Remove($sType = "")
 
 		; Remove registry entries
 		RegDelete("HKEY_LOCAL_MACHINE\SOFTWARE\Intermix_Support\" & $_g_sCompanyName)
-		RegDelete("HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\" & $g_sServiceName)
 		RegDelete("HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\" & $_g_sProgramName)
+
+		; Remove VNC Service
+		RunWait(@ComSpec & " /c " & 'sc delete ' & $g_sServiceName, "", @SW_HIDE)
 
 
 		;delete install directory
 		If $bUpdate Then
 			DirRemove($g_sInstDir & "\", 1)
 		Else
-			_deleteself(@ProgramFilesDir & "\IntermixSupport\" & $_g_sCompanyName, 15)
+			_deleteself(@ProgramFilesDir & "\IntermixSupport\" & $_g_sCompanyName, 5)
+		EndIf
+
+		If Not $bQuiet Or Not $bUpdate Then
+			;Remove Splash Message
+			SplashOff()
 		EndIf
 
 		;Asks User to restart the computer
@@ -934,7 +942,7 @@ Func Remove($sType = "")
 			Return True
 		Else
 			If MsgBox(4, $_g_sProgramTitle, $_g_sMsgBox_NeedReboot) == 6 Then
-				Shutdown(6)
+				Run('shutdown /r /f /t 60 /c "' & $_g_sRestartWarning &'" /d P:4:2')
 				Exit
 			Else
 				Exit
@@ -958,7 +966,7 @@ SYNTAX:............ No parameters
 
 #ce ====================================================================================================
 Func CloseSupport()
-;~ 	WinSetOnTop($_g_sProgramTitle, "", 0)
+
 	If $g_iSetupStatus = 2 Then
 
 		Exit
@@ -986,7 +994,8 @@ Func CloseSupport()
 			SplashTextOn($_g_sProgramTitle, $_g_sSplash_ClosingSupport, 500, 50, -1, -1, 4, "Arial", 11)
 			$pid = Run($g_sWorkingPath & "\IntermixVNC.exe -kill")
 			ProcessWaitClose($pid, 15)
-			_deleteself($g_sWorkingPath, 5)
+			_deleteself($g_sWorkingPath, 1)
+			DirRemove($g_sWorkingPath & "\", 1)
 			Exit
 		EndIf
 
@@ -1033,6 +1042,8 @@ Func _deleteself($sDeletePath, $idelay = 5)
 				& 'DEL /F /Q "' & $sDeletePath & '\ultravnc.ini"' & @CRLF _
 				& 'DEL /F /Q "' & $sDeletePath & '\intermix.ini"' & @CRLF _
 				& 'DEL /F /Q "' & $sDeletePath & '\unblock.js"' & @CRLF _
+				& 'DEL /F /Q "' & $sDeletePath & '\vnchooks.dll"' & @CRLF _
+				& 'DEL /F /Q "' & $sDeletePath & '\logmessages.dll"' & @CRLF _
 				& 'DEL /F /Q "' & $sDeletePath & '\IntermixVNC.exe"' & @CRLF _
 				& 'DEL /F /Q "' & $sDeletePath & '\First_Server_ClientAuth.pubkey"' & @CRLF _
 				& 'RD /S /Q "' & $sDeletePath & '"' & @CRLF _

@@ -390,7 +390,7 @@ Func Setup()
 	SplashOff()
 
 	;~ Ask user if wants to open the Repeater
-	If MsgBox(4, $g_sProgramTitle, "Do you wish to open the Repeater configuration?") == 6 Then
+	If MsgBox(4, $g_sProgramTitle, "Do you wish to open the Repeater to start configuring?") == 6 Then
 		Local $bOpenRepeater = True
 	EndIf
 
