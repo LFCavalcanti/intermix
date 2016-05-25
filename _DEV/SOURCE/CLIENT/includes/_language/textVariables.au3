@@ -17,9 +17,13 @@ Global $_g_sConfigTitle = $_g_sLabel_Support & " - " & $_g_sCompanyName
 Global $_g_sMsgBox_ServiceInstall = "Instalação do serviço"
 
 Global $_g_sMsgBox_RemoveService = "Deseja remover o serviço e desinstalar?"
-Global $_g_sMsgBox_InputID = "Digite o número de ID:"
-Global $_g_sMsgBox_InvalidID = "ID inválido! Digite um ID entre 100.000 e 200.000."
+;~ Global $_g_sMsgBox_InputID = "Digite o número de ID:"
+;~ Global $_g_sMsgBox_InvalidID = "ID inválido! Digite um ID entre 100.000 e 200.000."
 
+Global $_g_sMsgBox_KeepConfigTitle = "SERVER SETUP"
+Global $_g_sMsgBox_KeepConfig = "Deseja manter o ID e Repeater atuais?"
+Global $_g_sMsgBox_InvalidID = "O número de ID deve estar entre 100000 e 199999."
+Global $_g_sMsgBox_InvalidRepeater = "Repeater inválido, informações faltando no cadastro."
 Global $_g_sMsgBox_CloseSupport = "Deseja encerrar o suporte remoto?"
 Global $_g_sMsgBox_OpenInstalled = "O Suporte Remoto já está instalado em seu computador. Deseja inicia-lo?"
 Global $_g_sMsgBox_ServiceRestartMsg = "O Serviço do Suporte Remoto não conseguiu iniciar corretamente."
@@ -33,7 +37,7 @@ Global $_g_sSplash_Update = "Uma versão anterior foi detectada. Removendo versão
 Global $_g_sMsgBox_UpdateFailed = "A atualização falhou. O processo será interrompido, por favor, entre em contato com o Help Desk."
 Global $_g_sSplash_Setup = "A instalação está em andamento. Aguarde..."
 Global $_g_sMsgBox_RepeaterIndexTitle = "Repeater de conexão - Servidor"
-Global $_g_sMsgBox_RepeaterIndex = "Digite o número do repeater que deseja usar(0, 1, 2 ou 3):"
+;~ Global $_g_sMsgBox_RepeaterIndex = "Digite o número do repeater que deseja usar(0, 1, 2 ou 3):"
 
 Global $_g_sRestartWarning = "Seu computador irá reiniciar em 60 segundos..."
 

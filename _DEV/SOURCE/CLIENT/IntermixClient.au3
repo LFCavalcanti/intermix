@@ -60,6 +60,8 @@ Break(0)
 
 #region ### INCLUDES ###
 
+#include <ComboConstants.au3>
+#include <Array.au3>
 #include ".\includes\ResourcesEx.au3"
 #include ".\includes\MetroGUI_UDF.au3"
 #include ".\includes\_language\textVariables.au3"
@@ -634,11 +636,14 @@ Func Setup($sType = "/station")
 	;Control flags to guide the installation procedure
 	Local $bQuiet = False
 	Local $bServerSetup = False
-	Local $bIDInvalid = True
-	Local $RepInvalid = True
+	Local $bServerSetupData = False
+	Local $nKeepConfig = 7
+;~ 	Local $bIDInvalid = True
+;~ 	Local $RepInvalid = True
 	Local $bUpdate = False
 	Local $sTypeSetup = "Workstation"
 	Local $iRepIndex = 0
+	Local $bServerSetupData = True
 
 	;Set the installation Directory
 	Local $g_sInstDir = @ProgramFilesDir & "\IntermixSupport\" & $_g_sCompanyName & "\"
@@ -658,37 +663,54 @@ Func Setup($sType = "/station")
 	EndIf
 
 	; Request and validate the ID
-	If $bServerSetup Then
-		While $bIDInvalid
+;~ 	If $bServerSetup Then
+;~ 		While $bIDInvalid
 ;~ 			WinSetOnTop($_g_sProgramTitle, "", 0)
-			$g_iNumId = InputBox($_g_sMsgBox_ServiceInstall, $_g_sMsgBox_InputID, $g_iNumId,"",200,125)
-			If $g_iNumId < 200000 And $g_iNumId > 100000 Then
-				$bIDInvalid = False
-			Else
-				If MsgBox(1, $_g_sConfigTitle, $_g_sMsgBox_InvalidID) == 2 Then
-					_deleteself($g_sWorkingPath, 5)
-					Exit ; Chamar função para fechar aplicação ou simplesmente interromper e returnar valor
-				EndIf
-			EndIf
-		WEnd
-	EndIf
+;~ 			$g_iNumId = InputBox($_g_sMsgBox_ServiceInstall, $_g_sMsgBox_InputID, $g_iNumId,"",200,125)
+;~ 			If $g_iNumId < 200000 And $g_iNumId > 100000 Then
+;~ 				$bIDInvalid = False
+;~ 			Else
+;~ 				If MsgBox(1, $_g_sConfigTitle, $_g_sMsgBox_InvalidID) == 2 Then
+;~ 					_deleteself($g_sWorkingPath, 5)
+;~ 					Exit ; Chamar função para fechar aplicação ou simplesmente interromper e returnar valor
+;~ 				EndIf
+;~ 			EndIf
+;~ 		WEnd
+;~ 	EndIf
 
 	; If server, request Repeater to be used
-	If $bServerSetup Then
-		While $RepInvalid
-			$iRepIndex = InputBox($_g_sMsgBox_RepeaterIndexTitle,$_g_sMsgBox_RepeaterIndex,"","",200,150)
-			If $iRepIndex >= 0 And $iRepIndex < 4 Then
-				$g_nRepeaterIndex = $iRepIndex
-				$RepInvalid = False
-			ElseIf @error = 1 Then
-				_deleteself($g_sWorkingPath, 5)
-				Exit
-			EndIf
-		WEnd
-	EndIf
+;~ 	If $bServerSetup Then
+;~ 		While $RepInvalid
+;~ 			$iRepIndex = InputBox($_g_sMsgBox_RepeaterIndexTitle,$_g_sMsgBox_RepeaterIndex,"","",200,150)
+;~ 			If $iRepIndex >= 0 And $iRepIndex < 4 Then
+;~ 				$g_nRepeaterIndex = $iRepIndex
+;~ 				$RepInvalid = False
+;~ 			ElseIf @error = 1 Then
+;~ 				_deleteself($g_sWorkingPath, 5)
+;~ 				Exit
+;~ 			EndIf
+;~ 		WEnd
+;~ 	EndIf
 
 	; Disable Main GUI
 	_Metro_GUIDelete($GUI_HOVER_REG_MAIN, $g_hMainGUI)
+
+	; If it is installed and the type is Server, ask if want to keep config
+	If $g_iSetupStatus = 2 Then
+		$nKeepConfig = MsgBox(BitOR($MB_YESNO,$MB_ICONQUESTION), $_g_sMsgBox_KeepConfigTitle, $_g_sMsgBox_KeepConfig)
+	EndIf
+
+	; If select no to keep config or is not installed
+	If $nKeepConfig = 7 And $bServerSetup Then
+		; Call the Function to retrieve repeater and ID
+		$bServerSetupData = SetupServer()
+	EndIf
+
+	;If Cancel Button was pressed on the SetupServer()
+	If Not $bServerSetupData Then
+		_deleteself($g_sWorkingPath, 5)
+		Exit
+	EndIf
 
 	;If a previous version is already installed
 	If $g_iVersion > $g_sInstVersion And $g_iSetupStatus > 0 Then
@@ -800,6 +822,9 @@ Func Setup($sType = "/station")
 		RunWait('cacls ultravnc.ini /e /g everyone:f', $g_sInstDir, @SW_HIDE)
 	EndIf
 
+	;Modify Service Permissions to allow all users to stop and start it
+	Run(@ComSpec & ' /c ' & 'sc sdset "' & $g_sServiceName & '" D:(A;;CCLCSWRPWPDTLOCRRC;;;SY)(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;BA)(A;;CCLCSWLOCRRC;;;IU)(A;;CCLCSWLOCRRC;;;SU)(A;;RPWPCR;;;WD) S:(AU;FA;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;WD)', "", @SW_HIDE)
+
 	;Start VNC as Service
 	Local $sResultVNCStart = RunWait(@ComSpec & " /c " & 'net start ' & $g_sServiceName, "", @SW_HIDE)
 	If @error Then
@@ -812,9 +837,6 @@ Func Setup($sType = "/station")
 	If Not $bServerSetup Then
 		RunWait(@ComSpec & " /c " & 'net stop ' & $g_sServiceName, "", @SW_HIDE)
 	EndIf
-
-	;Modify Service Permissions to allow all users to stop and start it
-	RunWait(@ComSpec & " /c " & "sc sdset " & $g_sServiceName & " D:(A;;CCLCSWRPWPDTLOCRRC;;;SY)(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;BA)(A;;CCLCSWLOCRRC;;;IU)(A;;CCLCSWLOCRRC;;;SU)(A;;RPWP;;;WD)S:(AU;FA;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;WD)", "", @SW_HIDE)
 
 	;Modify the Local GPO do allow VNC to generate Keyboard Inputs such as Ctrl+Alt+Del
 	RunWait(@ComSpec & " /c " & "reg add HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System /v SoftwareSASGeneration /t REG_DWORD /d 1 /f", "", @SW_HIDE)
@@ -869,7 +891,7 @@ Func Remove($sType = "")
 		Exit
 	EndIf
 
-	;If not /quiet or /update ask user
+	;If not /quiet nor /update ask user
 	If Not $bQuiet And Not $bUpdate Then
 ;~ 		WinSetOnTop($_g_sProgramTitle, "", 0)
 		$iResultAskRemove = MsgBox(4, $_g_sProgramTitle, $_g_sMsgBox_RemoveService)
@@ -913,6 +935,7 @@ Func Remove($sType = "")
 		Else
 			If MsgBox(4, $_g_sProgramTitle, $_g_sMsgBox_NeedReboot) == 6 Then
 				Shutdown(6)
+				Exit
 			Else
 				Exit
 			EndIf
@@ -1210,3 +1233,116 @@ Func ConfigGUI()
 	GUISetState(@SW_SHOW,$g_hConfigGUI)
 EndFunc
 ;============> End configGUI() ==============================================================
+
+
+
+#cs FUNCTION ===========================================================================================
+
+FUNCTION:.......... SetupServer()
+DESCRIPTION:....... Draws the a GUI to ask ID and Repeater to use
+SYNTAX:............ No parameters
+
+#ce ====================================================================================================
+Func SetupServer()
+
+	; Set MetroUI UDF Theme
+	_SetTheme("Intermix")
+
+	Local $sLabel_SetupTitle = "SERVER SETUP"
+	Local $sLabel_Repeater = "REPEATER:"
+	Local $sLabel_ID = "ID:"
+
+	Local $hSetupGUI = _Metro_CreateGUI($sLabel_SetupTitle, 270, 270, -1, -1, 1, 0)
+	Local $GUI_HOVER_REG_SETUP = $hSetupGUI[1]
+
+	$hSetupGUI = $hSetupGUI[0]
+
+	Local $idLabel_SetupTitle = GUICtrlCreateLabel($sLabel_SetupTitle, 15, 25, 250, 20)
+	GUICtrlSetFont(-1, 14, 700, 0, "Arial", 5)
+	GUICtrlSetColor(-1, 0xF4511E)
+	GUICtrlSetBkColor(-1, $GUI_BKCOLOR_TRANSPARENT)
+
+	Local $idLabel_Repeater = GUICtrlCreateLabel($sLabel_Repeater, 15, 70, 150, 15)
+	GUICtrlSetFont(-1, 11, 700, 0, "Arial", 5)
+	GUICtrlSetColor(-1, 0xBEBEBE)
+	GUICtrlSetBkColor(-1, $GUI_BKCOLOR_TRANSPARENT)
+
+	Local $IdCombo_Repeater = GUICtrlCreateCombo("",15, 90, 150, 45,$CBS_DROPDOWNLIST)
+	GUICtrlSetFont(-1, 10, 700, 0, "Arial", 5)
+	GUICtrlSetColor(-1, 0x282828)
+	GUICtrlSetBkColor(-1, 0xBEBEBE)
+
+	GUICtrlSetData($IdCombo_Repeater, $_g_aRepeaterName[0] & "|" _
+									& $_g_aRepeaterName[1] & "|" _
+									& $_g_aRepeaterName[2] & "|" _
+									& $_g_aRepeaterName[3] _
+									, $_g_aRepeaterName[1])
+
+
+	Local $idLabel_ID = GUICtrlCreateLabel($sLabel_ID, 15, 130, 150, 15)
+	GUICtrlSetFont(-1, 11, 700, 0, "Arial", 5)
+	GUICtrlSetColor(-1, 0xBEBEBE)
+	GUICtrlSetBkColor(-1, $GUI_BKCOLOR_TRANSPARENT)
+
+	Local $idInput_ID = GUICtrlCreateInput("", 15, 150, 100, 25)
+	GUICtrlSetFont(-1, 11, 700, 0, "Arial", 5)
+	GUICtrlSetColor(-1, 0x282828)
+	GUICtrlSetBkColor(-1, 0xBEBEBE)
+
+	Local $idButton_SetupCancel = _Metro_CreateButton($GUI_HOVER_REG_SETUP, "CANCEL", 15, 205, 100, 30)
+
+	Local $idButton_SetupOk = _Metro_CreateButton($GUI_HOVER_REG_SETUP, "OK", 130, 205, 100, 30)
+
+	GUISetState(@SW_SHOW, $hSetupGUI)
+
+	While 1
+
+		If WinActive($hSetupGUI) Then
+
+			_Metro_HoverCheck_Loop($GUI_HOVER_REG_SETUP, $hSetupGUI)
+
+			$MainMsg = GUIGetMsg()
+
+			Switch $MainMsg
+
+				Case $idButton_SetupCancel
+					_Metro_GUIDelete($GUI_HOVER_REG_SETUP, $hSetupGUI)
+					Return False
+
+				Case $idButton_SetupOk
+					Local $nSetupID = GUICtrlRead($idInput_ID)
+					Local $sRepeater = GUICtrlRead($IdCombo_Repeater)
+
+					;Checks if ID is valid, if not, delete input and loop
+					If $nSetupID < 100000 Or $nSetupID > 199999 Then
+						MsgBox(BitOR($MB_OK,$MB_ICONERROR), $_g_sMsgBox_GeneralError, $_g_sMsgBox_InvalidID)
+						GUICtrlSetData($idInput_ID, "")
+						ContinueLoop
+					EndIf
+
+					;Retrieve the index for the arrays containing the repeater info
+					Local $iRepeaterIdx = _ArraySearch($_g_aRepeaterName, $sRepeater , 0, 3)
+
+					;Check if the repeater selected have valid information
+					If $_g_aRepeaterPort[$iRepeaterIdx] = "" Or $_g_aRepeaterIp[$iRepeaterIdx] = "" Then
+						MsgBox(BitOR($MB_OK,$MB_ICONERROR), $_g_sMsgBox_GeneralError, $_g_sMsgBox_InvalidRepeater)
+						ContinueLoop
+					EndIf
+
+					_Metro_GUIDelete($GUI_HOVER_REG_SETUP, $hSetupGUI)
+
+					$g_nRepeaterIndex = $iRepeaterIdx
+					$g_iNumId = $nSetupID
+
+					Return True
+
+			EndSwitch
+
+		Else
+			Sleep(200)
+		EndIf
+
+	WEnd
+
+EndFunc
+;============> End configGUI() =========================================================================
