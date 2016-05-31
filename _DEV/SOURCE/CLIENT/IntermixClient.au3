@@ -8,7 +8,7 @@
 
 	Created: 11/05/2015
 
-	Edited: 20/05/2016
+	Edited: 31/05/2016
 
 	Description:
 	Script for the client, that users run to allow
@@ -20,8 +20,8 @@
 #Region ### WRAPPER DIRECTIVES ###
 
 #AutoIt3Wrapper_Icon=img\icon.ico
-#AutoIt3Wrapper_Res_Fileversion=0.1.1
-#AutoIt3Wrapper_Res_Productversion=0.1.1
+#AutoIt3Wrapper_Res_Fileversion=0.1.2
+#AutoIt3Wrapper_Res_Productversion=0.1.2
 #AutoIt3Wrapper_Res_Field=ProductName|Intermix Client
 #AutoIt3Wrapper_Res_LegalCopyright=GPL3
 #AutoIt3Wrapper_Res_Language=1046
@@ -100,11 +100,11 @@ Global $GUI_HOVER_REG_CONFIG = ""
 Global $GUI_CLOSE_BUTTON_CONFIG = ""
 Global $GUI_MINIMIZE_BUTTON_CONFIG = ""
 
-Global $g_sVersion = "0.1.1 ALPHA"
-Global $_g_sLabel_VersionMain = "0.1.0 A"
+Global $g_sVersion = "0.1.2 ALPHA"
+Global $_g_sLabel_VersionMain = "0.1.2 A"
 Global $g_sMajorVersion = "0x00000001"
 Global $g_sMinorVersion = "0x00000000"
-Global $g_iVersion = 11
+Global $g_iVersion = 12
 Global $g_iSetupStatus = 0
 Global $g_sWorkingPath = @AppDataDir & "\Intermix_Temp_Files"
 Global $g_CmdParamTwo = ""
@@ -653,26 +653,34 @@ Func Setup($sType = "/station")
 
 	;Check if the Script is running with admin privileges and set flags for cmdline parameters
 	If IsAdmin() Then ; If is admin, set the parameter to variables
+
 		If $sType == "/server" Then
+
 			$bServerSetup = True
 			$sTypeSetup = "Server"
+
 		ElseIf $sType == "/quiet" Then
+
 			$bQuiet = True
-		EndIf
+
 		Else ;If not, run it as admin
-		$pid = Run($g_sWorkingPath & "\IntermixVNC.exe -kill")
-		ProcessWaitClose($pid, 15)
-		_deleteself($g_sWorkingPath, 1)
-		DirRemove($g_sWorkingPath & "\", 1)
-		ShellExecute(@ScriptFullPath, "/setup " & $sType, @ScriptDir, "runas")
-		Exit
+
+			$pid = Run($g_sWorkingPath & "\IntermixVNC.exe -kill")
+			ProcessWaitClose($pid, 15)
+			_deleteself($g_sWorkingPath, 1)
+			DirRemove($g_sWorkingPath & "\", 1)
+			ShellExecute(@ScriptFullPath, "/setup " & $sType, @ScriptDir, "runas")
+			Exit
+
+		EndIf
+
 	EndIf
 
 	; Disable Main GUI
 	_Metro_GUIDelete($GUI_HOVER_REG_MAIN, $g_hMainGUI)
 
 	; If it is installed and the type is Server, ask if want to keep config
-	If $g_iSetupStatus = 2 Then
+	If $g_iSetupStatus = 2 and Not $bQuiet Then
 		$nKeepConfig = MsgBox(BitOR($MB_YESNO,$MB_ICONQUESTION), $_g_sMsgBox_KeepConfigTitle, $_g_sMsgBox_KeepConfig)
 	EndIf
 
@@ -708,6 +716,10 @@ Func Setup($sType = "/station")
 		;disable de Splash Text
 		SplashOff()
 
+	;If is the same version, it is installed as station and Quiet
+	ElseIf $g_iVersion = $g_sInstVersion And $g_iSetupStatus = 1 and $bQuiet Then
+		_deleteself($g_sWorkingPath, 5)
+		Exit
 	Else
 		$pid = Run($g_sWorkingPath & "\IntermixVNC.exe -kill")
 		ProcessWaitClose($pid, 15)
