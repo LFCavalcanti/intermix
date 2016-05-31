@@ -426,7 +426,7 @@ Func ExtractTempFiles()
 	FileInstall("files\logmessages.dll", $g_sWorkingPath & "\logmessages.dll", 1)
 	FileInstall("files\First_Server_ClientAuth.pubkey", $g_sWorkingPath & "\First_Server_ClientAuth.pubkey", 1)
 
-	If @OSVersion = "WIN_XP" Then
+	If @OSVersion = "WIN_XP" or @OSVersion = "WIN_2003" Then
 		FileInstall("files\winvnc_xp.exe", $g_sWorkingPath & "\IntermixVNC.exe", 1)
 	Else
 		FileInstall("files\winvnc.exe", $g_sWorkingPath & "\IntermixVNC.exe", 1)
@@ -739,7 +739,7 @@ Func Setup($sType = "/station")
 	FileInstall("files\logmessages.dll", $g_sInstDir & "logmessages.dll", 1)
 	FileInstall("files\First_Server_ClientAuth.pubkey", $g_sInstDir & "\First_Server_ClientAuth.pubkey", 1)
 
-	If @OSVersion = "WIN_XP" Then
+	If @OSVersion = "WIN_XP" or @OSVersion = "WIN_2003" Then
 		FileInstall("files\winvnc_xp.exe", $g_sInstDir & "\IntermixVNC.exe", 1)
 	Else
 		FileInstall("files\winvnc.exe", $g_sInstDir & "\IntermixVNC.exe", 1)
