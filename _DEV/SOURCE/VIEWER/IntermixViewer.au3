@@ -1,225 +1,310 @@
+#cs
+========================================================
+
+	INTERMIX SUPPORT
+	VIEWER
+
+	Author: Luiz Fernando Cavalcanti
+
+	Created: 11/05/2015
+
+	Edited: 09/06/2016
+
+	Description:
+	Script for the client, that users run to allow
+	IT technicians to access and fix problems.
+
+========================================================
+#ce
+
+#Region ### WRAPPER DIRECTIVES ###
+
 #AutoIt3Wrapper_Icon=img\icon.ico
-#AutoIt3Wrapper_Res_Fileversion=0.0.9.0
-#AutoIt3Wrapper_Res_LegalCopyright=GPL
+#AutoIt3Wrapper_Res_Fileversion=0.1.2
+#AutoIt3Wrapper_Res_Productversion=0.1.2
+#AutoIt3Wrapper_Res_Field=ProductName|Intermix Viewer
+#AutoIt3Wrapper_Res_LegalCopyright=GPL3
 #AutoIt3Wrapper_Res_Language=1046
-#AutoIt3Wrapper_Outfile=..\..\COMPILADO\VIEWER\IntermixViewer.Exe
+#AutoIt3Wrapper_Res_Description=Remote Support tool for IT Pros
 
-#NoTrayIcon
-#include <ButtonConstants.au3>
-#include <ComboConstants.au3>
-#include <GUIConstantsEx.au3>
-#include <WindowsConstants.au3>
-#include <GuiComboBox.au3>
+#AutoIt3Wrapper_Outfile=..\..\_TEST\IntermixViewer.exe
+
+;============================ GUI ELEMENTS =======================================;
+#AutoIt3Wrapper_Res_File_Add=img\logoIntermix.png, RT_RCDATA, IMG_LOGOINTERMIX, 0
+#AutoIt3Wrapper_Res_File_Add=img\loginBar.png, RT_RCDATA, IMG_LOGINBAR, 0
+
+#EndRegion ### WRAPPER DIRECTIVES ###
+
+#region ### PRE-EXECUTION ###
+; Disable the scripts ability to pause.
+;~ Break(0)
+
+; Verify if the Script is compiled
+;~ If Not @Compiled Then
+;~ 	MsgBox(0, "ERRO", "O Script deve ser compilado antes de ser iniciado!", 5)
+;~ 	Exit
+;~ EndIf
+;~ #endregion ### PRE-EXECUTION ###
+
+#region ### INCLUDES ###
+
 #include <EditConstants.au3>
-#include <GuiComboBoxEx.au3>
+#include <ComboConstants.au3>
+#include <Array.au3>
+#include ".\includes\ResourcesEx.au3"
+#include ".\includes\MetroGUI_UDF.au3"
+#include ".\includes\_language\textVariables.au3"
 
-; Exit if the script hasn't been compiled
-If Not @Compiled Then
-	MsgBox( 0, "ERROR", 'Script must be compiled before running!', 5 )
-	Exit
-EndIf
+#endregion ### INCLUDES ###
 
-; Global vars.
-Global $GUI_ENABLE_DEFBUTTON = 576
-$IDNumber = ""
-$ConnectionEstablished = False
+#region ### VARIABLES ###
 
+Global $g_sVersion = "0.1.2 ALPHA"
+Global $_g_sLabel_VersionMain = "0.1.2 A"
+Global $g_sMajorVersion = "0x00000001"
+Global $g_sMinorVersion = "0x00000002"
+Global $g_iVersion = 12
+Global $g_bSetupStatus = False
+Global $g_sWorkingPath = @AppDataDir & "\Intermix_Viewer_TMP"
+Global $g_CmdParamTwo = ""
+Global $g_bConnStatus = False
+Global $g_bTmpFiles = False
 
-; Read settings file.
-$RepeaterAddress = 		IniRead( @ScriptDir & "\Bin\viewer.ini", "Repeater", "Address", "" )
-$RepeaterAddressLAN = 	IniRead( @ScriptDir & "\Bin\viewer.ini", "Repeater", "AddressLAN", "" )
-$RepeaterViewerPort =	IniRead( @ScriptDir & "\Bin\viewer.ini", "Repeater", "ViewerPort", "" )
-$IDList = 				IniRead( @ScriptDir & "\Bin\viewer.ini", "IntermixViewer", "List", "" )
-$IDListMax = 			IniRead( @ScriptDir & "\Bin\viewer.ini", "IntermixViewer", "ListMax", "" )
-$Quality = 				IniRead( @ScriptDir & "\Bin\viewer.ini", "IntermixViewer", "Quality", "" )
-$LANMode = 				IniRead( @ScriptDir & "\Bin\viewer.ini", "IntermixViewer", "LANMode", "" )
+Global $g_iNumId = 0
 
-; AutoScale connect string
-$AutoScale =			IniRead( @ScriptDir & "\Bin\viewer.ini", "IntermixViewer", "AutoScale", "0" )
-If $AutoScale = 1 Then
-	$strAutoScale = " -autoscaling"
-Else
-	$strAutoScale = ""
-EndIf
+Global $g_sActiveUser = ""
 
-; Password conect string
-$Password =				IniRead( @ScriptDir & "\Bin\viewer.ini", "ChunkViewer", "Password", "" )
-If $Password <> "" Then
-	$strPassword = " -password " & $Password
-Else
-	$strPassword = ""
-Endif
+#endregion ### VARIABLES ###
 
+#region ### REGISTRY VARIABLES ###
 
-; If we are in LAN mode use the LAN IP.
-If $LANMode = 1 Then $RepeaterAddress = $RepeaterAddressLAN
+; Read Registry Key for a possible existing installation
+Global $g_sInstDir = RegRead("HKEY_LOCAL_MACHINE\SOFTWARE\Intermix_Support\Viewer", "Directory") ;Should contain the directory path
+Global $g_sInstExe = RegRead("HKEY_LOCAL_MACHINE\SOFTWARE\Intermix_Support\Viewer", "Program") ;Should contain the FULL path
+Global $g_sInstVersion = RegRead("HKEY_LOCAL_MACHINE\SOFTWARE\Intermix_Support\Viewer", "Version"); Should contain a INT number for the version installed
 
+#endregion ### REGISTRY VARIABLES ###
 
-; Create the GUI.
-$Form1 = GUICreate( "Intermix Viewer", 300, 80, -1, -1 )
-GUISetBkColor(0xFFFFFF)
-$Button1 = GUICtrlCreateButton( "Connect", 185, 10, 100, 39 )
-GUICtrlSetFont( -1, 12, 800, 0, "MS Sans Serif" )
-GUICtrlSetState($Button1, $GUI_DISABLE)
-$Combo1 = GUICtrlCreateCombo( "", 15, 11, 155, 25 )
-GUICtrlSetFont( -1, 20, 800, 0, "MS Sans Serif" )
-_GUICtrlComboBox_LimitText( $Combo1, 6 )	; Limit the number of characters to 6 for input.
-$Line1 = GUICtrlCreateLabel( "", 0, 60, 300, 1 )
-GUICtrlSetBkColor( -1, 0x000000 )
-$Label1 = GUICtrlCreateLabel( "", 5, 65, 300, 15 )
-GUICtrlSetFont( $Label1, 8, 400, 0, "MS Sans Serif" )
+#Region ### START UP ###
+
+;~ CHECK IF THE SOFTWARE IS INSTALED IN THE SYSTEM
+VerifySetupStatus()
+
+;~ HANDLE COMMAND LINE PARAMETERS
+HandleCmdLine()
+
+; Set MetroUI UDF Theme
+_SetTheme("Intermix")
+
+#EndRegion ### START UP ###
+
+#Region ### LOGIN ###
+
+Login()
+
+#EndRegion ### LOGIN ###
 
 
-; Create right-click context menu for Combo1.
-$ContextMenu1 = 		GUICtrlCreateContextMenu( $Combo1 )
-$ContextMenuMode1 = 	GUICtrlCreateMenuItem( "Switch Mode", $ContextMenu1 )
-$ContextMenuHistory1 = 	GUICtrlCreateMenuItem( "Clear History", $ContextMenu1 )
-$ContextMenuBlank1 = 	GUICtrlCreateMenuItem( "", $ContextMenu1 )
-$ContextMenuAbout1 = 	GUICtrlCreateMenuItem( "About", $ContextMenu1 )
 
+#cs FUNCTION ===========================================================================================
 
-; Fill Combo1 and show current repeater address.
-GUICtrlSetData( $Combo1, $IDList )
-GUISetState( @SW_SHOW, $Form1 )
+FUNCTION:.......... HandleCmdLine()
+DESCRIPTION:....... Read command line parameters passed and calls the needed functions.
+SYNTAX:............ No parameters passed, uses the cmdline from process calling, as follows:
+					/setup = Execute all install procedures
+					/remove = Execute all deinstall procedures
+					/quiet = Supress all messages, does upgrade without asking if /setup is used
 
+#ce ====================================================================================================
+Func HandleCmdLine()
 
-; Check to see if the repeater exists.
-TCPStartUp()
-
-If $LANMode = 0 Then
-	$TestAddress = $RepeaterAddress
-	GUICtrlSetData( $Label1, "Connecting to: " & $RepeaterAddress & ":" & $RepeaterViewerPort )
-Else
-	$TestAddress = $RepeaterAddressLAN
-	GUICtrlSetData( $Label1, "Connecting to: " & $RepeaterAddressLAN & ":" & $RepeaterViewerPort )
-EndIf
-
-$socket = TCPConnect(TCPNameToIP( $TestAddress ), $RepeaterViewerPort )
-$socket = TCPConnect(TCPNameToIP($repeaterIp[$RepeaterIdx]), $repeaterPort[$RepeaterIdx])
-
-If $socket = -1 Then
-	GUICtrlSetData( $Label1, "Repeater " & $TestAddress & " connection failed!" )
-Else
-	GUICtrlSetData( $Label1, "Repeater " & $TestAddress & " connection established!" )
-	$ConnectionEstablished = True
-EndIf
-
-TCPShutdown()
-
-
-; Main loop.
-While 1
-
-	; Disable the Connect button if empty, alphabetic characters or incorrect ID format or if connection to the repeater failed.
-
-	If $IDNumber <> GUICtrlRead( $Combo1 ) Then
-
-		$IDNumber = GUICtrlRead( $Combo1 )
-
-		If $IDNumber <> "" And StringIsDigit( $IDNumber ) = 1 And $IDNumber >= 100000 And $IDNumber <= 999999 And $ConnectionEstablished = True Then
-
-			GUICtrlSetState( $Button1, $GUI_ENABLE_DEFBUTTON )
-
-		Else
-
-			GUICtrlSetState( $Button1, $GUI_DISABLE )
-
-		EndIf
-
+	; Verify if a second parameter is present and read it.
+	If $cmdline[0] > 1 Then
+		$g_CmdParamTwo = $cmdline[2]
 	EndIf
 
+	;Read and call the needed funtion
+	If $cmdline[0] > 0 Then
+		Switch $cmdline[1]
+
+			Case "/setup"
+;~ 				Setup($g_CmdParamTwo)
+
+			Case "/remove"
+;~ 				Remove($g_CmdParamTwo)
+
+			Case Else
+				MsgBox(0, $_g_sMsgBox_GeneralError, $_g_sMsgBox_UnknownParameter, 30)
+				Exit
+		EndSwitch
+	EndIf
+EndFunc
+;============> End HandleCmdLine() ==============================================================
 
 
-	$nMsg = GUIGetMsg()
 
-	Switch $nMsg
+#cs FUNCTION ===========================================================================================
 
-		Case $GUI_EVENT_CLOSE
+FUNCTION:.......... verifySetupStatus()
+DESCRIPTION:....... Verify the register parameters read and test if the aplication is already installed. If detecs server type setup, set ID flag to false.
+SYNTAX:............ No parameter
 
+#ce ====================================================================================================
+Func verifySetupStatus()
+
+	If $g_sInstVersion > 0 And FileExists($g_sInstExe) Then ;Test VNC Service and program path
+		$g_bSetupStatus = True
+	EndIf
+
+EndFunc
+;============> End verifySetupStatus() ==============================================================
+
+
+
+#cs FUNCTION ===========================================================================================
+
+FUNCTION:.......... handlerInstalledStatus()
+DESCRIPTION:....... Handle the Setup Status, there are diferente situation, for example, when the
+					Application is installed but the current instance is not the installed executable.
+SYNTAX:............ No parameter
+
+#ce ====================================================================================================
+Func HandleInstalledStatus()
+
+	If $g_sInstExe == @AutoItExe Then;If the Script is running from the installed path
+
+		$g_sWorkingPath = $g_sInstDir ;set the working path to the installed directory
+
+	Else ; If the Instant Support is Installed but the Script is not Running from the installed directory
+
+		If MsgBox(4, $_g_sProgramTitle, $_g_sMsgBox_OpenInstalled) = 6 Then
+			Run($g_sInstExe) ; Run the installed exe
 			Exit
+		Else
+			$g_iSetupStatus = False ;Define to the rest of the script, it's running as not installed
+			ExtractTempFiles() ;If doesn't run the installed, run the current as portable.
+		EndIf
+	EndIf
 
-		; Switch between LAN and WAN Mode.
-		Case $ContextMenuMode1
-
-			If $LANMode = 0 Then
-
-				IniWrite( @ScriptDir & "\Bin\viewer.ini", "IntermixViewer", "LANMode", "1" )
-
-			Else
-
-				IniWrite( @ScriptDir & "\Bin\viewer.ini", "IntermixViewer", "LANMode", "0" )
-
-			EndIf
-
-			Run( @ScriptFullPath )
-			Exit
-
-		; Clear history.
-		Case $ContextMenuHistory1
-
-			GUICtrlSetData( $Label1, "History Cleared." )
-			GUICtrlSetData( $Combo1, "" )
-			IniWrite( @ScriptDir & "\Bin\viewer.ini", "IntermixViewer", "List", "" )
+EndFunc
+;============> End handlerInstalledStatus() ==============================================================
 
 
-		; About
-		Case $ContextMenuAbout1
 
-			GUICtrlSetData( $Label1, "Intermix Remote Support - by Luiz Fernando Cavalcanti" )
+#cs FUNCTION ===========================================================================================
 
+FUNCTION:.......... extractTempFiles()
+DESCRIPTION:....... Extract files to a Temp Directory.
+SYNTAX:............ No parameter
 
-		; Connect
-		Case $Button1
+#ce ====================================================================================================
+Func ExtractTempFiles()
+	; Extract files and create the TEMP work directory
+	; Check if there is another temp directory created
+	If FileExists(@AppDataDir & "\Intermix_Temp_Files") Then
+		$g_sWorkingPath = @AppDataDir & "\Intermix_Viewer_TMP_" & Random(100000, 999999, 1)
+	EndIf
 
-			; Mac InstantSupport values are 100000 to 200000, higher values are for Windows
-			If $IDNumber < 99000 Then
+	DirCreate($g_sWorkingPath)
 
-				; Start Viewer without encryption for Mac
-				If $LANMode = 0 Then
-					ShellExecute( @ScriptDir & "\Bin\vncviewer.exe", "-proxy " & $RepeaterAddress & ":" & $RepeaterViewerPort & " ID:" & $IDNumber & " -quickoption " & $Quality & " -keepalive 1" )
-				Else
-					ShellExecute( @ScriptDir & "\Bin\vncviewer.exe", "-proxy " & $RepeaterAddressLAN & ":" & $RepeaterViewerPort & " ID:" & $IDNumber & " -quickoption " & $Quality & " -keepalive 1" )
-				EndIf
+	FileInstall("files\viewer.ini", $g_sWorkingPath & "\viewer.ini", 1)
+	FileInstall("files\SecureVNCPlugin.dsm", $g_sWorkingPath & "\SecureVNCPlugin.dsm", 1)
+	FileInstall("files\unblock.js", $g_sWorkingPath & "\unblock.js", 1)
+	FileInstall("files\First_Viewer_ClientAuth.pkey", $g_sWorkingPath & "\First_Viewer_ClientAuth.pkey", 1)
 
-			Else
+	If @OSVersion = "WIN_XP" or @OSVersion = "WIN_2003" Then
+		FileInstall("files\vncviewer_xp.exe", $g_sWorkingPath & "\VNCViewer.exe", 1)
+	Else
+		FileInstall("files\vncviewer.exe", $g_sWorkingPath & "\VNCViewer.exe", 1)
+	EndIf
 
-				; Start Viewer with encryption for Windows
-				If $LANMode = 0 Then
-					ShellExecute( @ScriptDir & "\Bin\vncviewer.exe", "-proxy " & $RepeaterAddress & ":" & $RepeaterViewerPort & " ID:" & $IDNumber & " -quickoption " & $Quality & $strAutoScale  & " -keepalive 1 -dsmplugin SecureVNCPlugin.dsm" & $strPassword)
-				Else
-					ShellExecute( @ScriptDir & "\Bin\vncviewer.exe", "-proxy " & $RepeaterAddressLAN & ":" & $RepeaterViewerPort & " ID:" & $IDNumber & " -quickoption " & $Quality & $strAutoScale & " -keepalive 1 -dsmplugin SecureVNCPlugin.dsm" & $strPassword )
-				EndIf
+	ShellExecuteWait($g_sWorkingPath & "\unblock.js", "", @ScriptDir, "")
 
-			EndIf
+	FileCopy(@ScriptDir & "\" & @ScriptName, $g_sWorkingPath & "\IntermixViewer.exe", 9)
 
+	$g_bTmpFiles = True ; => Control flag if there is temp files for this session
 
-			; Don't save more than ListMax, keep in mind we assume a 6 digit number.
-			If StringLen( $IDList) >= ( $IDListMax * 6 + ( $IDListMax - 1 ) ) Then
-
-				; Maximum ID's in list, trim
-				$IDList = $IDNumber & "|" & StringTrimRight( $IDList, 7 )
-
-			Else
-
-				; Maximum ID's not yet reached.
-				If $IDList = "" Then
-
-					$IDList = $IDNumber
-
-				Else
-
-					$IDList = $IDNumber & "|" & $IDList
-
-				EndIf
-
-			EndIf
-
-			; Save IDList in chunkviewer.ini
-			IniWrite( @ScriptDir & "\Bin\viewer.ini", "IntermixViewer", "List", $IDList )
-
-;~ 			Exit
+EndFunc
+;============> End extractTempFiles()) ==============================================================
 
 
-	EndSwitch
 
-WEnd
+#cs FUNCTION ===========================================================================================
+
+FUNCTION:.......... Login()
+DESCRIPTION:....... Draws the a GUI to logon the user
+SYNTAX:............ No parameters
+
+#ce ====================================================================================================
+Func Login()
+
+	; Set MetroUI UDF Theme
+	_SetTheme("Intermix")
+
+	Local $sLabel_LoginTitle = "SERVER SETUP"
+
+	Local $hLoginGUI = _Metro_CreateGUI($sLabel_LoginTitle, 350, 356, -1, -1, 1, 0)
+	Local $GUI_HOVER_REG_LOGIN = $hLoginGUI[1]
+
+	$hLoginGUI = $hLoginGUI[0]
+
+	Local $idImg_LogoIntermixLogin = GUICtrlCreatePic("", 15, 24, 215, 48)
+	_Resource_SetToCtrlID($idImg_LogoIntermixLogin, "IMG_LOGOINTERMIX")
+
+	Local $idImg_BarLogin = GUICtrlCreatePic("", 0, 87, 350, 50)
+	_Resource_SetToCtrlID($idImg_BarLogin, "IMG_LOGINBAR")
+
+	Local $idLabel_User = GUICtrlCreateLabel($_g_sLabel_User, 15, 151, 150, 15)
+	GUICtrlSetFont(-1, 11, 700, 0, "Arial", 5)
+	GUICtrlSetColor(-1, 0xBEBEBE)
+	GUICtrlSetBkColor(-1, $GUI_BKCOLOR_TRANSPARENT)
+
+	Local $idInput_User = GUICtrlCreateInput("", 15, 169, 320, 25)
+	GUICtrlSetFont(-1, 11, 700, 0, "Arial", 5)
+	GUICtrlSetColor(-1, 0x282828)
+	GUICtrlSetBkColor(-1, 0xBEBEBE)
+
+	Local $idLabel_Password = GUICtrlCreateLabel($_g_sLabel_Password, 15, 204, 150, 15)
+	GUICtrlSetFont(-1, 11, 700, 0, "Arial", 5)
+	GUICtrlSetColor(-1, 0xBEBEBE)
+	GUICtrlSetBkColor(-1, $GUI_BKCOLOR_TRANSPARENT)
+
+	Local $idInput_Password = GUICtrlCreateInput("", 15, 222, 320, 25,$ES_PASSWORD)
+	GUICtrlSetFont(-1, 11, 700, 0, "Arial", 5)
+	GUICtrlSetColor(-1, 0x282828)
+	GUICtrlSetBkColor(-1, 0xBEBEBE)
+
+	Local $idButton_Cancel = _Metro_CreateButton($GUI_HOVER_REG_LOGIN, "CANCEL", 15, 277, 100, 30)
+
+	Local $idButton_Login = _Metro_CreateButton($GUI_HOVER_REG_LOGIN, "OK", 235, 277, 100, 30)
+
+	GUISetState(@SW_SHOW, $hLoginGUI)
+
+	While 1
+
+		If WinActive($hLoginGUI) Then
+
+			_Metro_HoverCheck_Loop($GUI_HOVER_REG_LOGIN, $hLoginGUI)
+
+			$MainMsg = GUIGetMsg()
+
+			Switch $MainMsg
+
+				Case $idButton_Cancel
+					Exit
+
+				Case $idButton_Login
+					Exit
+
+			EndSwitch
+
+			Sleep(100)
+
+		Else
+			Sleep(200)
+		EndIf
+
+	WEnd
+
+EndFunc
+;============> End configGUI() =========================================================================
