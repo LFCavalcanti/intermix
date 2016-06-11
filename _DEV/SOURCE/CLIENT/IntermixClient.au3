@@ -402,6 +402,7 @@ EndFunc
 ;============> End handlerInstalledStatus() ==============================================================
 
 
+
 #cs FUNCTION ===========================================================================================
 
 FUNCTION:.......... extractTempFiles()
@@ -663,16 +664,16 @@ Func Setup($sType = "/station")
 
 			$bQuiet = True
 
-		Else ;If not, run it as admin
-
-			$pid = Run($g_sWorkingPath & "\IntermixVNC.exe -kill")
-			ProcessWaitClose($pid, 15)
-			_deleteself($g_sWorkingPath, 1)
-			DirRemove($g_sWorkingPath & "\", 1)
-			ShellExecute(@ScriptFullPath, "/setup " & $sType, @ScriptDir, "runas")
-			Exit
-
 		EndIf
+
+	Else ;If not, run it as admin
+
+		$pid = Run($g_sWorkingPath & "\IntermixVNC.exe -kill")
+		ProcessWaitClose($pid, 15)
+		_deleteself($g_sWorkingPath, 1)
+		DirRemove($g_sWorkingPath & "\", 1)
+		ShellExecute(@ScriptFullPath, "/setup " & $sType, @ScriptDir, "runas")
+		Exit
 
 	EndIf
 
