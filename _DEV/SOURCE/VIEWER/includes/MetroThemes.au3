@@ -5,15 +5,15 @@
 #ce ----------------------------------------------------------------------------
 
 ;#Set Default Theme
-Global $GUIThemeColor = "0x282828" ; GUI Background Color
+Global $GUIThemeColor = "0x191919" ; GUI Background Color
 Global $FontThemeColor = "0xFFFFFF" ; Font Color
-Global $GUIBorderColor = "0x2D2D2D" ; GUI Border Color
-Global $ButtonBKColor = "0x009688" ; Metro Button BacKground Color
+Global $GUIBorderColor = "0x303030" ; GUI Border Color
+Global $ButtonBKColor = "0x40798D" ; Metro Button BacKground Color
 Global $ButtonTextColor = "0xFFFFFF" ; Metro Button Text Color
-Global $GUI_Theme_Name = "DarkTeal"
+Global $GUI_Theme_Name = "DarkBlue"
 Global $ControlThickStyle = False ; Enables thick "Close/Maximize/Minimiz" button style.
 Global $CB_Radio_Color = "0xFFFFFF" ;Checkbox and Radio Color (Box/Circle)
-Global $CB_Radio_Hover_Color = "0xE5E5E5"; Checkbox and Radio Hover Color (Box/Circle)
+Global $CB_Radio_Hover_Color = "0xD8D8D8"; Checkbox and Radio Hover Color (Box/Circle)
 Global $CB_Radio_CheckMark_Color = "0x1B1B1B"; Checkbox and Radio checkmark color
 
 
@@ -31,7 +31,7 @@ Func _SetTheme($ThemeSelect = "DarkTeal")
 			$CB_Radio_Hover_Color = "0xF7F7F7"
 			$CB_Radio_CheckMark_Color = "0x1B1B1B"
 		Case "DarkTeal"
-			$GUIThemeColor = "0x282828"
+			$GUIThemeColor = "0x212121"
 			$FontThemeColor = "0xFFFFFF"
 			$GUIBorderColor = "0x2D2D2D"
 			$ButtonBKColor = "0x00897b"
@@ -39,7 +39,7 @@ Func _SetTheme($ThemeSelect = "DarkTeal")
 			$GUI_Theme_Name = "DarkTeal"
 			$ControlThickStyle = False
 			$CB_Radio_Color = "0xFFFFFF"
-			$CB_Radio_Hover_Color = "0xE5E5E5"
+			$CB_Radio_Hover_Color = "0xD8D8D8"
 			$CB_Radio_CheckMark_Color = "0x1B1B1B"
 		Case "DarkMidnight"
 			$GUIThemeColor = "0x1F253D"
@@ -50,7 +50,18 @@ Func _SetTheme($ThemeSelect = "DarkTeal")
 			$GUI_Theme_Name = "DarkMidnightV2"
 			$ControlThickStyle = False
 			$CB_Radio_Color = "0xFFFFFF"
-			$CB_Radio_Hover_Color = "0xE5E5E5"
+			$CB_Radio_Hover_Color = "0xD8D8D8"
+			$CB_Radio_CheckMark_Color = "0x1B1B1B"
+		Case "DarkBlue"
+			$GUIThemeColor = "0x212121"
+			$FontThemeColor = "0xFFFFFF"
+			$GUIBorderColor = "0x303030"
+			$ButtonBKColor = "0x40798D"
+			$ButtonTextColor = "0xFFFFFF"
+			$GUI_Theme_Name = "DarkBlue"
+			$ControlThickStyle = False
+			$CB_Radio_Color = "0xFFFFFF"
+			$CB_Radio_Hover_Color = "0xD8D8D8"
 			$CB_Radio_CheckMark_Color = "0x1B1B1B"
 		Case "LightBlue"
 			$GUIThemeColor = "0xcccccc"
@@ -63,7 +74,7 @@ Func _SetTheme($ThemeSelect = "DarkTeal")
 			$CB_Radio_Color = "0xFFFFFF"
 			$CB_Radio_Hover_Color = "0xF7F7F7"
 			$CB_Radio_CheckMark_Color = "0x1B1B1B"
-		Case "DarkBlue"
+		Case "DarkBlueV2"
 			$GUIThemeColor = "0x282828"
 			$FontThemeColor = "0xFFFFFF"
 			$GUIBorderColor = "0x2D2D2D"
@@ -72,12 +83,12 @@ Func _SetTheme($ThemeSelect = "DarkTeal")
 			$GUI_Theme_Name = "DarkBlue"
 			$ControlThickStyle = False
 			$CB_Radio_Color = "0xFFFFFF"
-			$CB_Radio_Hover_Color = "0xE5E5E5"
+			$CB_Radio_Hover_Color = "0xD8D8D8"
 			$CB_Radio_CheckMark_Color = "0x1B1B1B"
 		Case "LightCyan"
 			$GUIThemeColor = "0xD7D7D7"
 			$FontThemeColor = "0x1B1B1B"
-			$GUIBorderColor = "0xE5E5E5"
+			$GUIBorderColor = "0xD8D8D8"
 			$ButtonBKColor = "0x00838f"
 			$ButtonTextColor = "0xFFFFFF"
 			$GUI_Theme_Name = "LightCyan"
@@ -86,7 +97,7 @@ Func _SetTheme($ThemeSelect = "DarkTeal")
 			$CB_Radio_Hover_Color = "0xF7F7F7"
 			$CB_Radio_CheckMark_Color = "0x1B1B1B"
 		Case "DarkCyan"
-			$GUIThemeColor = "0x282828"
+			$GUIThemeColor = "0x212121"
 			$FontThemeColor = "0xFFFFFF"
 			$GUIBorderColor = "0x2D2D2D"
 			$ButtonBKColor = "0x00838f"
@@ -94,7 +105,7 @@ Func _SetTheme($ThemeSelect = "DarkTeal")
 			$GUI_Theme_Name = "DarkCyan"
 			$ControlThickStyle = False
 			$CB_Radio_Color = "0xFFFFFF"
-			$CB_Radio_Hover_Color = "0xE5E5E5"
+			$CB_Radio_Hover_Color = "0xD8D8D8"
 			$CB_Radio_CheckMark_Color = "0x1B1B1B"
 		Case "LightGray"
 			$GUIThemeColor = "0xcccccc"
@@ -110,7 +121,7 @@ Func _SetTheme($ThemeSelect = "DarkTeal")
 		Case "LightGreen"
 			$GUIThemeColor = "0xD7D7D7"
 			$FontThemeColor = "0x212121"
-			$GUIBorderColor = "0xE5E5E5"
+			$GUIBorderColor = "0xD8D8D8"
 			$ButtonBKColor = "0x2E7D32"
 			$ButtonTextColor = "0xFFFFFF"
 			$GUI_Theme_Name = "LightGreen"
@@ -119,7 +130,7 @@ Func _SetTheme($ThemeSelect = "DarkTeal")
 			$CB_Radio_Hover_Color = "0xF7F7F7"
 			$CB_Radio_CheckMark_Color = "0x1B1B1B"
 		Case "DarkGreen"
-			$GUIThemeColor = "0x282828"
+			$GUIThemeColor = "0x212121"
 			$FontThemeColor = "0xFFFFFF"
 			$GUIBorderColor = "0x2D2D2D"
 			$ButtonBKColor = "0x179141"
@@ -127,12 +138,12 @@ Func _SetTheme($ThemeSelect = "DarkTeal")
 			$GUI_Theme_Name = "DarkGreen"
 			$ControlThickStyle = False
 			$CB_Radio_Color = "0xFFFFFF"
-			$CB_Radio_Hover_Color = "0xE5E5E5"
+			$CB_Radio_Hover_Color = "0xD8D8D8"
 			$CB_Radio_CheckMark_Color = "0x1B1B1B"
 		Case "LightRed"
 			$GUIThemeColor = "0xD7D7D7"
 			$FontThemeColor = "0x212121"
-			$GUIBorderColor = "0xE5E5E5"
+			$GUIBorderColor = "0xD8D8D8"
 			$ButtonBKColor = "0xc62828"
 			$ButtonTextColor = "0xFFFFFF"
 			$GUI_Theme_Name = "LightRed"
@@ -149,10 +160,10 @@ Func _SetTheme($ThemeSelect = "DarkTeal")
 			$GUI_Theme_Name = "DarkGray"
 			$ControlThickStyle = False
 			$CB_Radio_Color = "0xFFFFFF"
-			$CB_Radio_Hover_Color = "0xE5E5E5"
+			$CB_Radio_Hover_Color = "0xD8D8D8"
 			$CB_Radio_CheckMark_Color = "0x1B1B1B"
 		Case "DarkAmber"
-			$GUIThemeColor = "0x282828"
+			$GUIThemeColor = "0x212121"
 			$FontThemeColor = "0xFFFFFF"
 			$GUIBorderColor = "0x2D2D2D"
 			$ButtonBKColor = "0xffa000"
@@ -160,12 +171,12 @@ Func _SetTheme($ThemeSelect = "DarkTeal")
 			$GUI_Theme_Name = "DarkAmber"
 			$ControlThickStyle = False
 			$CB_Radio_Color = "0xFFFFFF"
-			$CB_Radio_Hover_Color = "0xE5E5E5"
+			$CB_Radio_Hover_Color = "0xD8D8D8"
 			$CB_Radio_CheckMark_Color = "0x1B1B1B"
 		Case "LightOrange"
 			$GUIThemeColor = "0xD7D7D7"
 			$FontThemeColor = "0x212121"
-			$GUIBorderColor = "0xE5E5E5"
+			$GUIBorderColor = "0xD8D8D8"
 			$ButtonBKColor = "0xd84315"
 			$ButtonTextColor = "0xFFFFFF"
 			$GUI_Theme_Name = "LightOrange"
@@ -174,7 +185,7 @@ Func _SetTheme($ThemeSelect = "DarkTeal")
 			$CB_Radio_Hover_Color = "0xF7F7F7"
 			$CB_Radio_CheckMark_Color = "0x1B1B1B"
 		Case "DarkOrange"
-			$GUIThemeColor = "0x282828"
+			$GUIThemeColor = "0x212121"
 			$FontThemeColor = "0xFFFFFF"
 			$GUIBorderColor = "0x2D2D2D"
 			$ButtonBKColor = "0xf4511e"
@@ -182,12 +193,12 @@ Func _SetTheme($ThemeSelect = "DarkTeal")
 			$GUI_Theme_Name = "DarkOrange"
 			$ControlThickStyle = False
 			$CB_Radio_Color = "0xFFFFFF"
-			$CB_Radio_Hover_Color = "0xE5E5E5"
+			$CB_Radio_Hover_Color = "0xD8D8D8"
 			$CB_Radio_CheckMark_Color = "0x1B1B1B"
 		Case "LightPurple"
 			$GUIThemeColor = "0xD7D7D7"
 			$FontThemeColor = "0x212121"
-			$GUIBorderColor = "0xE5E5E5"
+			$GUIBorderColor = "0xD8D8D8"
 			$ButtonBKColor = "0x512DA8"
 			$ButtonTextColor = "0xFFFFFF"
 			$GUI_Theme_Name = "LightPurple"
@@ -196,7 +207,7 @@ Func _SetTheme($ThemeSelect = "DarkTeal")
 			$CB_Radio_Hover_Color = "0xF7F7F7"
 			$CB_Radio_CheckMark_Color = "0x1B1B1B"
 		Case "DarkPurple"
-			$GUIThemeColor = "0x282828"
+			$GUIThemeColor = "0x212121"
 			$FontThemeColor = "0xFFFFFF"
 			$GUIBorderColor = "0x2D2D2D"
 			$ButtonBKColor = "0x512DA8"
@@ -204,12 +215,12 @@ Func _SetTheme($ThemeSelect = "DarkTeal")
 			$GUI_Theme_Name = "DarkPurple"
 			$ControlThickStyle = False
 			$CB_Radio_Color = "0xFFFFFF"
-			$CB_Radio_Hover_Color = "0xE5E5E5"
+			$CB_Radio_Hover_Color = "0xD8D8D8"
 			$CB_Radio_CheckMark_Color = "0x1B1B1B"
 		Case "LightPink"
 			$GUIThemeColor = "0xD7D7D7"
 			$FontThemeColor = "0x212121"
-			$GUIBorderColor = "0xE5E5E5"
+			$GUIBorderColor = "0xD8D8D8"
 			$ButtonBKColor = "0xE91E63"
 			$ButtonTextColor = "0xFFFFFF"
 			$GUI_Theme_Name = "LightPink"
@@ -221,7 +232,7 @@ Func _SetTheme($ThemeSelect = "DarkTeal")
 			$GUIThemeColor = "0x282828"
 			$FontThemeColor = "0xBEBEBE"
 			$GUIBorderColor = "0x2D2D2D"
-			$ButtonBKColor = "0xf4511e"
+			$ButtonBKColor = "0xF4511E"
 			$ButtonTextColor = "0x282828"
 			$GUI_Theme_Name = "Intermix"
 			$ControlThickStyle = False

@@ -51,6 +51,8 @@ Global $_g_sMsgBox_UnknownParameter = "Parametro desconhecido"
 
 Global $_g_sSystemWillRestart = "Seu computador irá reiniciar em 60 segundos..."
 
-Global $_g_sTray_ButtonInstall = "Instalar Estação"
+Global $_g_sTray_ButtonInstall = "Instalar Viewer"
 Global $_g_sTray_ButtonInstallServer = "Instalar Servidores"
 Global $_g_sTray_ButtonExit = "Sair"
+
+Global $g_sLabel_ButtonConnect = "ACESSAR"
