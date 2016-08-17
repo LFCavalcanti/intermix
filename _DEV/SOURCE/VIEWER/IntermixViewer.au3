@@ -122,7 +122,7 @@ Global $g_bTmpFiles = False
 
 Global $g_sUserName = "Jhon Doe"
 
-Global $g_iNumId = 0
+Global $g_nNumId = 0
 
 Global $g_sActiveUser = ""
 
@@ -261,6 +261,7 @@ While 1
 		;Prevents a control with cursor hovering from updating to standard icon
 		If $aMouseInfo[4] = $g_hGUIControl_Main_IdHover Then
 			$g_bGUIControl_Main_Hover = False
+			Sleep(20)
 		EndIf
 
 		;Returns standard icon when control if cursor is not hovering
@@ -278,6 +279,7 @@ While 1
 						_Resource_SetToCtrlID($g_idButton_Main_ClientSelect, "IMG_LIST_S")
 					EndIf
 					$g_bGUIControl_Main_Hover = False
+					$g_hGUIControl_Main_IdHover = ""
 
 				; REPEATER SELECT
 				case $g_idButton_Main_RepeaterSelect
@@ -291,6 +293,7 @@ While 1
 						_Resource_SetToCtrlID($g_idButton_Main_RepeaterSelect, "IMG_SELECT_LOCK")
 					EndIf
 					$g_bGUIControl_Main_Hover = False
+					$g_hGUIControl_Main_IdHover = ""
 
 				; SERVER SELECT
 				case $g_idButton_Main_ServerSelect
@@ -304,21 +307,29 @@ While 1
 						_Resource_SetToCtrlID($g_idButton_Main_ServerSelect, "IMG_SELECT_LOCK")
 					EndIf
 					$g_bGUIControl_Main_Hover = False
+					$g_hGUIControl_Main_IdHover = ""
 
 				; CLEAR ID
 				case $g_idButton_Main_ClearId
 					_Resource_SetToCtrlID($g_idButton_Main_ClearId, "IMG_ERASE_S")
 					$g_bGUIControl_Main_Hover = False
+					$g_hGUIControl_Main_IdHover = ""
 
 				; CONNECT
 				case $g_idButton_Main_Connect
-					_Resource_SetToCtrlID($g_idButton_Main_Connect, "IMG_CONNECT_S")
+					If $g_bClient_Selected And $g_bRepeater_Selected And ($g_bServer_Selected Or $g_bIdReady) Then
+						_Resource_SetToCtrlID($g_idButton_Main_Connect, "IMG_CONNECT_R")
+					Else
+						_Resource_SetToCtrlID($g_idButton_Main_Connect, "IMG_CONNECT_S")
+					EndIf
 					$g_bGUIControl_Main_Hover = False
+					$g_hGUIControl_Main_IdHover = ""
 
 				; EXIT
 				case $g_idButton_Main_Exit
 					_Resource_SetToCtrlID($g_idButton_Main_Exit, "IMG_EXIT_S")
 					$g_bGUIControl_Main_Hover = False
+					$g_hGUIControl_Main_IdHover = ""
 
 			EndSwitch
 
@@ -380,7 +391,7 @@ While 1
 				Sleep(20)
 
 		EndSwitch
-		;======================================================================================
+		;==============================================================================================
 
 
 		; ========================== DETECTS MOUSE CLICKS =============================================
@@ -396,7 +407,7 @@ While 1
 						GUICtrlSetData($g_idInput_Main_IdNumber, "")
 						SelectServer(True)
 						_Resource_SetToCtrlID($g_idButton_Main_ServerSelect, "IMG_LIST_S")
-;~ 						GUICtrlSetState($g_idInput_Main_IdNumber, $GUI_ENABLE)
+						_Resource_SetToCtrlID($g_idButton_Main_Connect, "IMG_CONNECT_S")
 					EndIf
 
 				; Connect
@@ -438,9 +449,32 @@ While 1
 
 		EndIf
 
+
+		; ========================== CHECK IF ID IS VALID =============================================
+		If $g_bClient_Selected And $g_bRepeater_Selected And (Not $g_bServer_Selected) Then
+			If GUICtrlRead($g_idInput_Main_IdNumber) > 100000 Then
+				$g_nNumId = GUICtrlRead($g_idInput_Main_IdNumber)
+				$g_bIdReady = True
+				If $g_hGUIControl_Main_IdHover = $g_idButton_Main_Connect Then
+					Sleep(10)
+				Else
+					_Resource_SetToCtrlID($g_idButton_Main_Connect, "IMG_CONNECT_R")
+				EndIf
+			ElseIf $g_bIdReady Then
+				$g_bIdReady = False
+				If $g_hGUIControl_Main_IdHover = $g_idButton_Main_Connect Then
+					Sleep(10)
+				Else
+					_Resource_SetToCtrlID($g_idButton_Main_Connect, "IMG_CONNECT_S")
+				EndIf
+			EndIf
+		EndIf
+		;==============================================================================================
+
 		ContinueLoop
 
 	EndIf
+
 
 	#Region ### TRAY EVENTS ###
 	; Tray events.
@@ -1286,6 +1320,7 @@ Func SelectClient()
 		_Resource_SetToCtrlID($g_idButton_Main_ClientSelect, "IMG_LIST_S")
 		_Resource_SetToCtrlID($g_idButton_Main_RepeaterSelect, "IMG_SELECT_LOCK")
 		_Resource_SetToCtrlID($g_idButton_Main_ServerSelect, "IMG_SELECT_LOCK")
+		GUICtrlSetState($g_idInput_Main_IdNumber, $GUI_DISABLE)
 		Return
 	EndIf
 
@@ -1445,9 +1480,11 @@ Func SelectRepeater($bClientFastSelect = False, $bServerFastSelect = False, $bCl
 			SelectServer(True)
 			_Resource_SetToCtrlID($g_idButton_Main_ServerSelect, "IMG_LIST_S")
 			GUICtrlSetState($g_idInput_Main_IdNumber, $GUI_ENABLE)
+			ControlFocus("","",$g_idInput_Main_IdNumber)
 		Else
 			$g_bServer_Selected = True
 			$g_bServer_Error = False
+			_Resource_SetToCtrlID($g_idButton_Main_Connect, "IMG_CONNECT_R")
 		EndIf
 
 	Else
@@ -1492,6 +1529,7 @@ Func SelectServer($bClearServerSelection = False)
 	If $bClearServerSelection Then
 		GUICtrlSetData($g_idLabel_Main_ServerName, "")
 		GUICtrlSetState($g_idInput_Main_IdNumber, $GUI_ENABLE)
+		ControlFocus("","",$g_idInput_Main_IdNumber)
 		$g_nServerIdSelected = ""
 		$g_bServer_Selected = False
 		$g_bServer_Error = False
@@ -1654,8 +1692,9 @@ $g_aClientTable[4][2] = False
 $g_aRepeaterTable[0][0] = 0 ;ID Repeater
 $g_aRepeaterTable[0][1] = 0 ;ID Client
 $g_aRepeaterTable[0][2] = "CENTRAL" ;Name
-$g_aRepeaterTable[0][3] = "central.company.com" ;Host
-$g_aRepeaterTable[0][4] = "13001" ;Port
+;~ $g_aRepeaterTable[0][3] = "central.company.com" ;Host
+$g_aRepeaterTable[0][3] = "helpdesk.arriviera.com.br"
+$g_aRepeaterTable[0][4] = "14001" ;Port
 
 $g_aRepeaterTable[1][0] = 1
 $g_aRepeaterTable[1][1] = 1
