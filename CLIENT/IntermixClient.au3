@@ -25,9 +25,9 @@
 #AutoIt3Wrapper_Res_Field=ProductName|Intermix Client
 #AutoIt3Wrapper_Res_LegalCopyright=GPL3
 #AutoIt3Wrapper_Res_Language=1046
-#AutoIt3Wrapper_Res_Description=Remote Support tool for IT Pros
+#AutoIt3Wrapper_Res_Description=Intermix - Client
 
-#AutoIt3Wrapper_Outfile=..\..\_TEST\IntermixClient.exe
+#AutoIt3Wrapper_Outfile=..\_TEST\IntermixClient.exe
 
 ;============================ GUI ELEMENTS =======================================;
 #AutoIt3Wrapper_Res_File_Add=img\iconStartUp.png, RT_RCDATA, IMG_STARTICON, 0
@@ -72,36 +72,33 @@ Break(0)
 #region ### VARIABLES ###
 
 Global $g_iNumId = 0
-Global $g_sTxtLabelIdNum = "------"
-Global $g_iBarProgress = 0
+Global $g_sLabel_IdNum = "------"
+Global $g_nBarProgress = 0
 
-Global $g_hTrayInstall = ""
-Global $g_hTrayInstallServer = ""
-Global $g_hTrayExit = ""
+Global $g_hTray_Install = ""
+Global $g_hTray_InstallServer = ""
+Global $g_hTray_Exit = ""
 
-Global $g_idProgressStartUp = ""
+Global $g_idProgress_StartUp = ""
 Global $g_hStartUpGUI = ""
-Global $GUI_HOVER_REG_START = ""
 
 Global $g_hMainGUI = ""
-Global $GUI_HOVER_REG_MAIN = ""
-Global $GUI_CLOSE_BUTTON_MAIN = ""
-Global $GUI_MINIMIZE_BUTTON_MAIN = ""
-Global $g_idStatusMain = ""
-Global $g_idConfigMain = ""
-Global $g_idLabelNumID = ""
+Global $g_idButton_Main_WinClose = ""
+Global $g_idButton_Main_WinMinimize = ""
+Global $g_idButton_Main_Status = ""
+Global $g_idButton_Main_Config = ""
+Global $g_idLabel_Main_NumID = ""
 
-Global $g_sTxtLabelRepeater = "---------"
-Global $g_sNumLabelLatency = "----"
+Global $g_sLabel_RepeaterName = "---------"
+Global $g_sLabel_Latency = "----"
 
 Global $g_hConfigGUI = ""
 Global $g_bConfigGUIExist = False
-Global $GUI_HOVER_REG_CONFIG = ""
-Global $GUI_CLOSE_BUTTON_CONFIG = ""
-Global $GUI_MINIMIZE_BUTTON_CONFIG = ""
+Global $g_idButton_Config_WinClose = ""
+Global $g_idButton_Config_WinMinimize = ""
 
 Global $g_sVersion = "0.1.2 ALPHA"
-Global $_g_sLabel_VersionMain = "0.1.2 A"
+Global $g_sLabel_Main_Version = "0.1.2 A"
 Global $g_sMajorVersion = "0x00000001"
 Global $g_sMinorVersion = "0x00000000"
 Global $g_iVersion = 12
@@ -111,6 +108,9 @@ Global $g_CmdParamTwo = ""
 Global $g_sServiceName = "IntermixSupport_" & $_g_sCompanyName
 Global $g_bConnStatus = False
 Global $g_bTmpFiles = False
+
+Global $g_hGUIControl_Main_IdHover
+Global $g_bGUIControl_Main_Hover
 
 #endregion ### VARIABLES ###
 
@@ -191,10 +191,10 @@ Break(1)
 ; Create the tray icon. Default tray menu items (Script Paused/Exit) will not be shown.
 Opt("TrayMenuMode", 1)
 If $g_iSetupStatus < 1 Then
-	$g_hTrayInstall = TrayCreateItem($_g_sTray_ButtonInstall)
-	$g_hTrayInstallServer = TrayCreateItem($_g_sTray_ButtonInstallServer)
+	$g_hTray_Install = TrayCreateItem($_g_sTray_ButtonInstall)
+	$g_hTray_InstallServer = TrayCreateItem($_g_sTray_ButtonInstallServer)
 EndIf
-$g_hTrayExit = TrayCreateItem($_g_sTray_ButtonExit)
+$g_hTray_Exit = TrayCreateItem($_g_sTray_ButtonExit)
 
 #endregion ### INICIALIZATION PROCEDURES ###
 
@@ -207,78 +207,110 @@ While 1
 		; Get mouse info
 		Local $aMouseInfo = GUIGetCursorInfo($g_hMainGUI)
 
-		_Metro_HoverCheck_Loop($GUI_HOVER_REG_MAIN, $g_hMainGUI)
+		_Metro_HoverCheck_Loop($g_hMainGUI)
 
 		Local $hMainMsg = GUIGetMsg()
 
 		;========================== HOVER LOOP FOR CONTROL BUTTONS ==========================
 		Switch $hMainMsg
-			Case $GUI_EVENT_CLOSE, $GUI_CLOSE_BUTTON_MAIN
+			Case $GUI_EVENT_CLOSE, $g_idButton_Main_WinClose
 				CloseSupport()
-			Case $GUI_MINIMIZE_BUTTON_MAIN
+			Case $g_idButton_Main_WinMinimize
 				GUISetState(@SW_MINIMIZE,$g_hMainGUI)
 		EndSwitch
 		;====================================================================================
 
-		; =========================HOVER STATUS==============================================
-		; Mouse em hover no botão
-		If $aMouseInfo[4] = $g_idStatusMain Then
-			_Resource_SetToCtrlID($g_idStatusMain, "IMG_STATUSHOVER")
-		ElseIf $g_bConnStatus Then
-			_Resource_SetToCtrlID($g_idStatusMain, "IMG_STATUSOK")
-		Else
-			_Resource_SetToCtrlID($g_idStatusMain, "IMG_STATUSERROR")
+		;Prevents a control with cursor hovering from updating to standard icon
+		If $aMouseInfo[4] = $g_hGUIControl_Main_IdHover Then
+			$g_bGUIControl_Main_Hover = False
+			Sleep(20)
 		EndIf
-		; ===================================================================================
 
-		; ==========================HOVER CONFIG=============================================
-		; Mouse em hover no botão
-		If $aMouseInfo[4] = $g_idConfigMain Then
-			_Resource_SetToCtrlID($g_idConfigMain, "IMG_MAINCONFIGHOVER")
-		Else
-			_Resource_SetToCtrlID($g_idConfigMain, "IMG_MAINCONFIGICON")
+		;Returns standard icon when control if cursor is not hovering
+		If $g_bGUIControl_Main_Hover Then
+
+			Switch $g_hGUIControl_Main_IdHover
+
+				; STATUS
+				case $g_idButton_Main_Status
+					If $g_bConnStatus Then
+						_Resource_SetToCtrlID($g_idButton_Main_Status, "IMG_STATUSOK")
+					Else
+						_Resource_SetToCtrlID($g_idButton_Main_Status, "IMG_STATUSERROR")
+					EndIf
+					$g_bGUIControl_Main_Hover = False
+					$g_hGUIControl_Main_IdHover = ""
+
+				; CONFIG
+				case $g_idButton_Main_Config
+					_Resource_SetToCtrlID($g_idButton_Main_Config, "IMG_MAINCONFIGICON")
+					$g_bGUIControl_Main_Hover = False
+					$g_hGUIControl_Main_IdHover = ""
+
+			EndSwitch
+
+			Sleep(20)
+
 		EndIf
-		; ===================================================================================
+
+		; Check cursor hovering over controls
+		Switch $aMouseInfo[4]
+
+			;STATUS
+			Case $g_idButton_Main_Status
+				_Resource_SetToCtrlID($g_idButton_Main_Status, "IMG_STATUSHOVER")
+				$g_hGUIControl_Main_IdHover = $g_idButton_Main_Status
+				$g_bGUIControl_Main_Hover = True
+				Sleep(20)
+
+			;CONFIG
+			Case $g_idButton_Main_Config
+				_Resource_SetToCtrlID($g_idButton_Main_Config, "IMG_MAINCONFIGHOVER")
+				$g_hGUIControl_Main_IdHover = $g_idButton_Main_Config
+				$g_bGUIControl_Main_Hover = True
+				Sleep(20)
+
+		EndSwitch
 
 		; ========================== DETECTS MOUSE CLICKS =============================================
 		If $aMouseInfo[2] = 1 Then
 
-			;If click on Status Button
-			If $aMouseInfo[4] = $g_idStatusMain Then
+			Switch $aMouseInfo[4]
+				;STATUS
+				Case $g_idButton_Main_Status
+					_Resource_SetToCtrlID($g_idButton_Main_Status, "IMG_STATUSCLICK")
+					Sleep(50)
+					VncConnection(True)
 
-				_Resource_SetToCtrlID($g_idStatusMain, "IMG_STATUSCLICK")
-				Sleep(50)
-				VncConnection(True)
+				;CONFIG
+				Case $g_idButton_Main_Config
+					_Resource_SetToCtrlID($g_idButton_Main_Config, "IMG_MAINCONFIGCLICK")
+					Sleep(50)
+					If Not $g_bConfigGUIExist Then
+						ConfigGUI()
+					EndIf
 
-			;If click on config Button
-			ElseIf $aMouseInfo[4] = $g_idConfigMain Then
-
-				_Resource_SetToCtrlID($g_idConfigMain, "IMG_MAINCONFIGCLICK")
-				Sleep(50)
-				If Not $g_bConfigGUIExist Then
-					ConfigGUI()
-				EndIf
-
-			EndIf
+			EndSwitch
 
 		EndIf
 
+		Sleep(50)
 		ContinueLoop
 
 	EndIf
 
 	If $g_bConfigGUIExist And WinActive($g_hConfigGUI) Then
 
-		_Metro_HoverCheck_Loop($GUI_HOVER_REG_CONFIG, $g_hConfigGUI)
+		_Metro_HoverCheck_Loop($g_hConfigGUI)
 
 		$hConfigMsg = GUIGetMsg()
 
 		Switch $hConfigMsg
 		;=========================================Control-Buttons===========================================
-			Case $GUI_EVENT_CLOSE, $GUI_CLOSE_BUTTON_CONFIG
-				_Metro_GUIDelete($GUI_HOVER_REG_CONFIG, $g_hConfigGUI)
+			Case $GUI_EVENT_CLOSE, $g_idButton_Config_WinClose
+				_Metro_GUIDelete($g_hConfigGUI)
 				$g_bConfigGUIExist = False
-			Case $GUI_MINIMIZE_BUTTON_CONFIG
+			Case $g_idButton_Config_WinMinimize
 				GUISetState(@SW_MINIMIZE,$g_hConfigGUI)
 		;===================================================================================================
 		EndSwitch
@@ -287,7 +319,7 @@ While 1
 
 	Else
 
-		Sleep(200)
+		Sleep(50)
 
 	EndIf
 
@@ -297,16 +329,16 @@ While 1
 
 	If $g_iSetupStatus > 0 Then
 		Switch $hTrayMsg
-			Case $g_hTrayExit
+			Case $g_hTray_Exit
 				Closesupport()
 		EndSwitch
 	Else
 		Switch $hTrayMsg
-			Case $g_hTrayInstall
+			Case $g_hTray_Install
 				Setup()
-			Case $g_hTrayInstallServer
+			Case $g_hTray_InstallServer
 				Setup("/server")
-			Case $g_hTrayExit
+			Case $g_hTray_Exit
 				CloseSupport()
 		EndSwitch
 	EndIf
@@ -469,13 +501,13 @@ Func TestConnection($bTestType = False, $iRepeaterIdx = 0)
 
 		If $nSocket = -1 Or $iLatency = 0 Or $iLatency > 500 Then
 			TCPShutdown()
-			$g_sTxtLabelRepeater = "---------"
-			$g_sNumLabelLatency = "----"
+			$g_sLabel_RepeaterName = "---------"
+			$g_sLabel_Latency = "----"
 			Return False
 		Else
 			TCPShutdown()
-			$g_sTxtLabelRepeater = $_g_aRepeaterName[$iRepeaterIdx]
-			$g_sNumLabelLatency = $iLatency
+			$g_sLabel_RepeaterName = $_g_aRepeaterName[$iRepeaterIdx]
+			$g_sLabel_Latency = $iLatency
 			Return True
 		EndIf
 
@@ -489,8 +521,8 @@ Func TestConnection($bTestType = False, $iRepeaterIdx = 0)
 				$iRepeaterIdx+=1
 			Else
 				TCPShutdown()
-				$g_sTxtLabelRepeater = $_g_aRepeaterName[$iRepeaterIdx]
-				$g_sNumLabelLatency = $iLatency
+				$g_sLabel_RepeaterName = $_g_aRepeaterName[$iRepeaterIdx]
+				$g_sLabel_Latency = $iLatency
 				$g_nRepeaterIndex = $iRepeaterIdx
 				Return True
 			EndIf
@@ -499,8 +531,8 @@ Func TestConnection($bTestType = False, $iRepeaterIdx = 0)
 	EndIf
 
 	TCPShutdown()
-	$g_sTxtLabelRepeater = "---------"
-	$g_sNumLabelLatency = "----"
+	$g_sLabel_RepeaterName = "---------"
+	$g_sLabel_Latency = "----"
 	Return False
 
 EndFunc
@@ -520,7 +552,7 @@ Func GenerateID()
 	Local $nLowerLimit = 200000
 	Local $nUpperLimit = 999999
 	$g_iNumId = Random($nLowerLimit, $nUpperLimit, 1)
-	$g_sTxtLabelIdNum = $g_iNumId
+	$g_sLabel_IdNum = $g_iNumId
 
 EndFunc
 ;============> End testConnection() ==============================================================
@@ -540,7 +572,7 @@ Func VncConnection($bReconnect = False)
 	If $bReconnect Then ; If reconnect
 
 		;Set icon on GUI
-		_Resource_SetToCtrlID($g_idStatusMain, "IMG_STATUSCONN")
+		_Resource_SetToCtrlID($g_idButton_Main_Status, "IMG_STATUSCONN")
 
 		;Terminate current VNC process
 		Local $hPidVNC = Run($g_sWorkingPath & "\IntermixVNC.exe -kill")
@@ -552,7 +584,7 @@ Func VncConnection($bReconnect = False)
 		Else
 			$g_bConnStatus = testConnection(False)
 			; Since not server, write null ID on GUI
-			GUICtrlSetData($g_idLabelNumID, "------")
+			GUICtrlSetData($g_idLabel_Main_NumID, "------")
 		EndIf
 		Sleep(2000)
 	EndIf
@@ -569,10 +601,10 @@ Func VncConnection($bReconnect = False)
 		RunWait(@ComSpec & " /c " & 'net start ' & $g_sServiceName, "", @SW_HIDE)
 
 		;Set icon on GUI
-		_Resource_SetToCtrlID($g_idStatusMain, "IMG_STATUSOK")
+		_Resource_SetToCtrlID($g_idButton_Main_Status, "IMG_STATUSOK")
 
 		;Set ID Num on GUI as Installed ID
-		GUICtrlSetData($g_idLabelNumID, $g_sInstID)
+		GUICtrlSetData($g_idLabel_Main_NumID, $g_sInstID)
 
 		Return
 
@@ -590,8 +622,8 @@ Func VncConnection($bReconnect = False)
 		;Start the service
 		RunWait(@ComSpec & " /c " & 'net start ' & $g_sServiceName, "", @SW_HIDE)
 
-		GUICtrlSetData($g_idLabelNumID, $g_iNumId)
-		_Resource_SetToCtrlID($g_idStatusMain, "IMG_STATUSOK")
+		GUICtrlSetData($g_idLabel_Main_NumID, $g_iNumId)
+		_Resource_SetToCtrlID($g_idButton_Main_Status, "IMG_STATUSOK")
 
 	ElseIf $g_bConnStatus Then ;==> If Connection OK and not installed
 
@@ -604,18 +636,18 @@ Func VncConnection($bReconnect = False)
 		; Give some time to the connection
 		Sleep(2000)
 
-		GUICtrlSetData($g_idLabelNumID, $g_iNumId)
+		GUICtrlSetData($g_idLabel_Main_NumID, $g_iNumId)
 
 		Sleep(500)
 
-		_Resource_SetToCtrlID($g_idStatusMain, "IMG_STATUSOK")
+		_Resource_SetToCtrlID($g_idButton_Main_Status, "IMG_STATUSOK")
 
 
 
 	Else ;==> If Connection Error
 
-		GUICtrlSetData($g_idLabelNumID, "------")
-		_Resource_SetToCtrlID($g_idStatusMain, "IMG_STATUSERROR")
+		GUICtrlSetData($g_idLabel_Main_NumID, "------")
+		_Resource_SetToCtrlID($g_idButton_Main_Status, "IMG_STATUSERROR")
 
 	EndIf
 
@@ -678,7 +710,7 @@ Func Setup($sType = "/station")
 	EndIf
 
 	; Disable Main GUI
-	_Metro_GUIDelete($GUI_HOVER_REG_MAIN, $g_hMainGUI)
+	_Metro_GUIDelete($g_hMainGUI)
 
 	; If it is installed and the type is Server, ask if want to keep config
 	If $g_iSetupStatus = 2 and Not $bQuiet Then
@@ -915,7 +947,7 @@ Func Remove($sType = "")
 		EndIf
 
 		; Disable Main GUI
-		_Metro_GUIDelete($GUI_HOVER_REG_MAIN, $g_hMainGUI)
+		_Metro_GUIDelete($g_hMainGUI)
 
 		; Remove shortcuts
 		Local $ini_dir = @ProgramsCommonDir & "\" & $_g_sProgramName
@@ -987,7 +1019,7 @@ Func CloseSupport()
 	ElseIf $g_iSetupStatus = 1 Then
 
 		; Disable Main GUI
-		_Metro_GUIDelete($GUI_HOVER_REG_MAIN, $g_hMainGUI)
+		_Metro_GUIDelete($g_hMainGUI)
 
 		; Hide GUI
 		GUISetState(@SW_HIDE)
@@ -1003,7 +1035,7 @@ Func CloseSupport()
 	Else
 		If MsgBox(4, $_g_sProgramTitle, $_g_sMsgBox_CloseSupport) = 6 Then
 			; Disable Main GUI
-			_Metro_GUIDelete($GUI_HOVER_REG_MAIN, $g_hMainGUI)
+			_Metro_GUIDelete($g_hMainGUI)
 			SplashTextOn($_g_sProgramTitle, $_g_sSplash_ClosingSupport, 500, 50, -1, -1, 4, "Arial", 11)
 			$pid = Run($g_sWorkingPath & "\IntermixVNC.exe -kill")
 			ProcessWaitClose($pid, 15)
@@ -1084,23 +1116,21 @@ Func StartProgressBar($iAction = 0,$iUpdateValue = 0)
 
 	; Operation 1 - Update ProgressBar
 	If($iAction = 1) Then
-	  $g_iBarProgress = $g_iBarProgress + $iUpdateValue
-	  _Metro_SetProgress($g_idProgressStartUp, $g_iBarProgress)
+	  $g_nBarProgress = $g_nBarProgress + $iUpdateValue
+	  _Metro_SetProgress($g_idProgress_StartUp, $g_nBarProgress)
 	  Return
 	EndIf
 
 	; Operation 2 - Finish startup screen
 	If($iAction = 2) Then
 		Sleep(200)
-		_Metro_GUIDelete($GUI_HOVER_REG_START, $g_hStartUpGUI)
+		_Metro_GUIDelete($g_hStartUpGUI)
 		Return
 	EndIf
 
-	$g_iBarProgress = 0
+	$g_nBarProgress = 0
 
-	$g_hStartUpGUI = _Metro_CreateGUI("INICIANDO...", 500, 95, -1, -1)
-	$GUI_HOVER_REG_START = $g_hStartUpGUI[1]
-	$g_hStartUpGUI = $g_hStartUpGUI[0]
+	$g_hStartUpGUI = _Metro_CreateGUI("INICIANDO...", 500, 95, -1, -1, False, False)
 
 	$lbStarting = GUICtrlCreateLabel($_g_sLabel_Start, 75, 24, 105, 20)
 	GUICtrlSetFont(-1, 12, 700, 0, "Arial", 5)
@@ -1110,7 +1140,7 @@ Func StartProgressBar($iAction = 0,$iUpdateValue = 0)
 	$iconStartUp = GUICtrlCreatePic("", 15, 24, 46, 46)
 	_Resource_SetToCtrlID($iconStartUp, "IMG_STARTICON")
 
-	$g_idProgressStartUp = _Metro_CreateProgress(75, 50, 395, 20)
+	$g_idProgress_StartUp = _Metro_CreateProgress(75, 50, 395, 20)
 
 	GUISetState(@SW_SHOW,$g_hStartUpGUI)
 
@@ -1128,13 +1158,21 @@ SYNTAX:............ No parameters
 #ce ====================================================================================================
 Func MainGUI()
 
-	$g_hMainGUI = _Metro_CreateGUI($_g_sProgramTitle, 500, 205, -1, -1, 1, 1)
-	$GUI_HOVER_REG_MAIN = $g_hMainGUI[1]
+	Local $aControlButtons
 
-	$GUI_CLOSE_BUTTON_MAIN = $g_hMainGUI[2]
-	$GUI_MINIMIZE_BUTTON_MAIN = $g_hMainGUI[5]
+	; Set MetroUI UDF Theme
+	_SetTheme("Intermix")
 
-	$g_hMainGUI = $g_hMainGUI[0]
+	;=== GUI Create ===================================================
+	$g_hMainGUI = _Metro_CreateGUI($_g_sProgramTitle, 500, 205, -1, -1, False, True)
+
+	$aControlButtons = _Metro_AddControlButtons(True, False, True, False, False)
+
+	$g_idButton_Main_WinClose = $aControlButtons[0]
+	$g_idButton_Main_WinMinimize = $aControlButtons[3]
+	;=====================================================================
+
+
 
 	$logoIntermixMain = GUICtrlCreatePic("", 15, 24, 217, 48)
 	_Resource_SetToCtrlID($logoIntermixMain, "IMG_LOGOINTERMIX")
@@ -1147,26 +1185,26 @@ Func MainGUI()
 	GUICtrlSetColor(-1, 0x282828)
 	GUICtrlSetBkColor(-1, $GUI_BKCOLOR_TRANSPARENT)
 
-	$g_idLabelNumID = GUICtrlCreateLabel($g_sTxtLabelIdNum, 97, 107, 135, 45)
+	$g_idLabel_Main_NumID = GUICtrlCreateLabel($g_sLabel_IdNum, 97, 107, 135, 45)
 	GUICtrlSetFont(-1, 28, 700, 0, "Arial", 5)
 	GUICtrlSetColor(-1, 0xBEBEBE)
 	GUICtrlSetBkColor(-1, $GUI_BKCOLOR_TRANSPARENT)
 
-	$g_idStatusMain = GUICtrlCreatePic("", 247, 105, 57, 50)
+	$g_idButton_Main_Status = GUICtrlCreatePic("", 247, 105, 57, 50)
 	If $g_bConnStatus Then ;==> If Connection OK
-		_Resource_SetToCtrlID($g_idStatusMain, "IMG_STATUSOK")
+		_Resource_SetToCtrlID($g_idButton_Main_Status, "IMG_STATUSOK")
 	Else ;==> If Connection Error
-		_Resource_SetToCtrlID($g_idStatusMain, "IMG_STATUSERROR")
+		_Resource_SetToCtrlID($g_idButton_Main_Status, "IMG_STATUSERROR")
 	EndIf
 
 	If $g_iSetupStatus = 2 and $g_bConnStatus Then
-		GUICtrlSetData($g_idLabelNumID, $g_sInstID)
+		GUICtrlSetData($g_idLabel_Main_NumID, $g_sInstID)
 	EndIf
 
-	$g_idConfigMain = GUICtrlCreatePic("", 428, 105, 57, 50)
-	_Resource_SetToCtrlID($g_idConfigMain, "IMG_MAINCONFIGICON")
+	$g_idButton_Main_Config = GUICtrlCreatePic("", 428, 105, 57, 50)
+	_Resource_SetToCtrlID($g_idButton_Main_Config, "IMG_MAINCONFIGICON")
 
-	$lbDisclaimer = GUICtrlCreateLabel($_g_sLabel_VersionMain, 445, 185, 100, 15)
+	$lbDisclaimer = GUICtrlCreateLabel($g_sLabel_Main_Version, 445, 185, 100, 15)
 	GUICtrlSetFont(-1, 8, 700, 0, "Arial", 5)
 	GUICtrlSetColor(-1, 0xBEBEBE)
 	GUICtrlSetBkColor(-1, $GUI_BKCOLOR_TRANSPARENT)
@@ -1187,14 +1225,21 @@ SYNTAX:............ No parameters
 #ce ====================================================================================================
 Func ConfigGUI()
 
+	Local $aControlButtons
+
 	$g_bConfigGUIExist = True
-	$g_hConfigGUI = _Metro_CreateGUI($_g_sConfigTitle, 500, 418, -1, -1, 1, 1)
-	$GUI_HOVER_REG_CONFIG = $g_hConfigGUI[1]
 
-	$GUI_CLOSE_BUTTON_CONFIG = $g_hConfigGUI[2]
-	$GUI_MINIMIZE_BUTTON_CONFIG = $g_hConfigGUI[5]
+	; Set MetroUI UDF Theme
+	_SetTheme("Intermix")
 
-	$g_hConfigGUI = $g_hConfigGUI[0]
+	;=== GUI Create ===================================================
+	$g_hConfigGUI = _Metro_CreateGUI($_g_sConfigTitle, 500, 418, -1, -1, False, True)
+
+	$aControlButtons = _Metro_AddControlButtons(True, False, True, False, False)
+
+	$g_idButton_Config_WinClose = $aControlButtons[0]
+	$g_idButton_Config_WinMinimize = $aControlButtons[3]
+	;=====================================================================
 
 	$logoCompanyConfig = GUICtrlCreatePic("", 15, 29, 260, 58)
 	_Resource_SetToCtrlID($logoCompanyConfig, "IMG_LOGOCOMPANY")
@@ -1214,12 +1259,12 @@ Func ConfigGUI()
 	$barConfig1 = GUICtrlCreatePic("", 15, 122, 478, 50)
 	_Resource_SetToCtrlID($barConfig1, "IMG_MAINCONFIGBAR1")
 
-	$lbStatusRepeater = GUICtrlCreateLabel($g_sTxtLabelRepeater, 64, 136, 135, 35)
+	$lbStatusRepeater = GUICtrlCreateLabel($g_sLabel_RepeaterName, 64, 136, 135, 35)
 	GUICtrlSetFont(-1, 18, 400, 0, "Arial", 5)
 	GUICtrlSetColor(-1, 0x282828)
 	GUICtrlSetBkColor(-1, $GUI_BKCOLOR_TRANSPARENT)
 
-	$lbStatusLatency = GUICtrlCreateLabel($g_sNumLabelLatency & "ms", 422, 136, 115, 35)
+	$lbStatusLatency = GUICtrlCreateLabel($g_sLabel_Latency & "ms", 422, 136, 115, 35)
 	GUICtrlSetFont(-1, 16, 400, 0, "Arial", 5)
 	GUICtrlSetColor(-1, 0x282828)
 	GUICtrlSetBkColor(-1, $GUI_BKCOLOR_TRANSPARENT)
@@ -1276,10 +1321,7 @@ Func SetupServer()
 	Local $sLabel_Repeater = "REPEATER:"
 	Local $sLabel_ID = "ID:"
 
-	Local $hSetupGUI = _Metro_CreateGUI($sLabel_SetupTitle, 270, 270, -1, -1, 1, 0)
-	Local $GUI_HOVER_REG_SETUP = $hSetupGUI[1]
-
-	$hSetupGUI = $hSetupGUI[0]
+	Local $hSetupGUI = _Metro_CreateGUI($sLabel_SetupTitle, 270, 270, -1, -1, False, True)
 
 	Local $idLabel_SetupTitle = GUICtrlCreateLabel($sLabel_SetupTitle, 15, 25, 250, 20)
 	GUICtrlSetFont(-1, 14, 700, 0, "Arial", 5)
@@ -1313,9 +1355,9 @@ Func SetupServer()
 	GUICtrlSetColor(-1, 0x282828)
 	GUICtrlSetBkColor(-1, 0xBEBEBE)
 
-	Local $idButton_SetupCancel = _Metro_CreateButton($GUI_HOVER_REG_SETUP, "CANCEL", 15, 205, 100, 30)
+	Local $idButton_SetupCancel = _Metro_CreateButton("CANCEL", 15, 205, 100, 30)
 
-	Local $idButton_SetupOk = _Metro_CreateButton($GUI_HOVER_REG_SETUP, "OK", 130, 205, 100, 30)
+	Local $idButton_SetupOk = _Metro_CreateButton("OK", 130, 205, 100, 30)
 
 	GUISetState(@SW_SHOW, $hSetupGUI)
 
@@ -1323,14 +1365,14 @@ Func SetupServer()
 
 		If WinActive($hSetupGUI) Then
 
-			_Metro_HoverCheck_Loop($GUI_HOVER_REG_SETUP, $hSetupGUI)
+			_Metro_HoverCheck_Loop($hSetupGUI)
 
 			$MainMsg = GUIGetMsg()
 
 			Switch $MainMsg
 
 				Case $idButton_SetupCancel
-					_Metro_GUIDelete($GUI_HOVER_REG_SETUP, $hSetupGUI)
+					_Metro_GUIDelete($hSetupGUI)
 					Return False
 
 				Case $idButton_SetupOk
@@ -1353,7 +1395,7 @@ Func SetupServer()
 						ContinueLoop
 					EndIf
 
-					_Metro_GUIDelete($GUI_HOVER_REG_SETUP, $hSetupGUI)
+					_Metro_GUIDelete($hSetupGUI)
 
 					$g_nRepeaterIndex = $iRepeaterIdx
 					$g_iNumId = $nSetupID
