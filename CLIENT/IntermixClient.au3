@@ -8,7 +8,7 @@
 
 	Created: 11/05/2015
 
-	Edited: 31/05/2016
+	Edited: 19/08/2022
 
 	Description:
 	Script for the client, that users run to allow
@@ -20,14 +20,14 @@
 #Region ### WRAPPER DIRECTIVES ###
 
 #AutoIt3Wrapper_Icon=img\icon.ico
-#AutoIt3Wrapper_Res_Fileversion=0.1.2
-#AutoIt3Wrapper_Res_Productversion=0.1.2
+#AutoIt3Wrapper_Res_Fileversion=0.1.3
+#AutoIt3Wrapper_Res_Productversion=0.1.3
 #AutoIt3Wrapper_Res_Field=ProductName|Intermix Client
 #AutoIt3Wrapper_Res_LegalCopyright=GPL3
 #AutoIt3Wrapper_Res_Language=1046
 #AutoIt3Wrapper_Res_Description=Intermix - Client
 
-#AutoIt3Wrapper_Outfile=..\_TEST\IntermixClient.exe
+#AutoIt3Wrapper_Outfile=..\..\_TEST\IntermixClient.exe
 
 ;============================ GUI ELEMENTS =======================================;
 #AutoIt3Wrapper_Res_File_Add=img\iconStartUp.png, RT_RCDATA, IMG_STARTICON, 0
@@ -97,8 +97,8 @@ Global $g_bConfigGUIExist = False
 Global $g_idButton_Config_WinClose = ""
 Global $g_idButton_Config_WinMinimize = ""
 
-Global $g_sVersion = "0.1.2 ALPHA"
-Global $g_sLabel_Main_Version = "0.1.2 A"
+Global $g_sVersion = "0.1.3 ALPHA"
+Global $g_sLabel_Main_Version = "0.1.3 A"
 Global $g_sMajorVersion = "0x00000001"
 Global $g_sMinorVersion = "0x00000000"
 Global $g_iVersion = 12
@@ -456,14 +456,9 @@ Func ExtractTempFiles()
 	FileInstall("files\ultravnc.ini", $g_sWorkingPath & "\ultravnc.ini", 1)
 	FileInstall("files\unblock.js", $g_sWorkingPath & "\unblock.js", 1)
 	FileInstall("files\vnchooks.dll", $g_sWorkingPath & "\vnchooks.dll", 1)
-	FileInstall("files\logmessages.dll", $g_sWorkingPath & "\logmessages.dll", 1)
-	FileInstall("files\First_Server_ClientAuth.pubkey", $g_sWorkingPath & "\First_Server_ClientAuth.pubkey", 1)
+	;FileInstall("files\logmessages.dll", $g_sWorkingPath & "\logmessages.dll", 1)
+	FileInstall("files\winvnc.exe", $g_sWorkingPath & "\IntermixVNC.exe", 1)
 
-	If @OSVersion = "WIN_XP" or @OSVersion = "WIN_2003" Then
-		FileInstall("files\winvnc_xp.exe", $g_sWorkingPath & "\IntermixVNC.exe", 1)
-	Else
-		FileInstall("files\winvnc.exe", $g_sWorkingPath & "\IntermixVNC.exe", 1)
-	EndIf
 
 	ShellExecuteWait($g_sWorkingPath & "\unblock.js", "", @ScriptDir, "")
 
@@ -769,14 +764,10 @@ Func Setup($sType = "/station")
 	FileInstall("files\ultravnc.ini", $g_sInstDir & "\ultravnc.ini", 1)
 	FileInstall("files\unblock.js", $g_sInstDir & "\unblock.js", 1)
 	FileInstall("files\vnchooks.dll", $g_sInstDir & "\vnchooks.dll", 1)
-	FileInstall("files\logmessages.dll", $g_sInstDir & "logmessages.dll", 1)
+	;FileInstall("files\logmessages.dll", $g_sInstDir & "logmessages.dll", 1)
 	FileInstall("files\First_Server_ClientAuth.pubkey", $g_sInstDir & "\First_Server_ClientAuth.pubkey", 1)
+	FileInstall("files\winvnc.exe", $g_sInstDir & "\IntermixVNC.exe", 1)
 
-	If @OSVersion = "WIN_XP" or @OSVersion = "WIN_2003" Then
-		FileInstall("files\winvnc_xp.exe", $g_sInstDir & "\IntermixVNC.exe", 1)
-	Else
-		FileInstall("files\winvnc.exe", $g_sInstDir & "\IntermixVNC.exe", 1)
-	EndIf
 	;========================================================================================================
 
 	ShellExecuteWait($g_sInstDir & "\unblock.js", "", @ScriptDir, "")

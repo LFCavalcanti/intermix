@@ -8,7 +8,7 @@
 
 	Created: 11/05/2015
 
-	Edited: 01/08/2016
+	Edited: 19/08/2022
 
 	Description:
 	Script for the client, that users run to allow
@@ -20,8 +20,8 @@
 #Region ### WRAPPER DIRECTIVES ###
 
 #AutoIt3Wrapper_Icon=img\icon.ico
-#AutoIt3Wrapper_Res_Fileversion=0.1.2
-#AutoIt3Wrapper_Res_Productversion=0.1.2
+#AutoIt3Wrapper_Res_Fileversion=0.1.3
+#AutoIt3Wrapper_Res_Productversion=0.1.3
 #AutoIt3Wrapper_Res_Field=ProductName|Intermix Viewer
 #AutoIt3Wrapper_Res_LegalCopyright=GPL3
 #AutoIt3Wrapper_Res_Language=1046
@@ -109,8 +109,8 @@ Global $g_aRepeaterTable[6][5]
 Global $g_aServerTable[6][5]
 ; =========================================
 
-Global $g_sVersion = "0.1.2 ALPHA"
-Global $g_sLabel_VersionMain = "0.1.2 A"
+Global $g_sVersion = "0.1.3 ALPHA"
+Global $g_sLabel_VersionMain = "0.1.3 A"
 Global $g_sMajorVersion = "0x00000001"
 Global $g_sMinorVersion = "0x00000002"
 Global $g_iVersion = 12
@@ -617,11 +617,7 @@ Func ExtractTempFiles()
 	FileInstall("files\unblock.js", $g_sWorkingPath & "\unblock.js", 1)
 	FileInstall("files\First_Viewer_ClientAuth.pkey", $g_sWorkingPath & "\First_Viewer_ClientAuth.pkey", 1)
 
-	If @OSVersion = "WIN_XP" or @OSVersion = "WIN_2003" Then
-		FileInstall("files\vncviewer_xp.exe", $g_sWorkingPath & "\VNCViewer.exe", 1)
-	Else
-		FileInstall("files\vncviewer.exe", $g_sWorkingPath & "\VNCViewer.exe", 1)
-	EndIf
+	FileInstall("files\vncviewer.exe", $g_sWorkingPath & "\VNCViewer.exe", 1)
 
 	ShellExecuteWait($g_sWorkingPath & "\unblock.js", "", @ScriptDir, "")
 
@@ -711,12 +707,8 @@ Func Setup($sType = "")
 	FileInstall("files\SecureVNCPlugin.dsm", $g_sInstDir & "\SecureVNCPlugin.dsm", 1)
 	FileInstall("files\unblock.js", $g_sInstDir & "\unblock.js", 1)
 	FileInstall("files\First_Viewer_ClientAuth.pkey", $g_sInstDir & "\First_Viewer_ClientAuth.pkey", 1)
+	FileInstall("files\vncviewer.exe", $g_sInstDir & "\VNCViewer.exe", 1)
 
-	If @OSVersion = "WIN_XP" or @OSVersion = "WIN_2003" Then
-		FileInstall("files\vncviewer_xp.exe", $g_sInstDir & "\VNCViewer.exe", 1)
-	Else
-		FileInstall("files\vncviewer.exe", $g_sInstDir & "\VNCViewer.exe", 1)
-	EndIf
 	;========================================================================================================
 
 	ShellExecuteWait($g_sInstDir & "\unblock.js", "", @ScriptDir, "")

@@ -8,7 +8,7 @@
 
 	Created: 11/05/2016
 
-	Edited: 18/05/2016
+	Edited: 19/08/2022
 
 	Description:
 	Script to extract and install the UltraVNC repeater
@@ -23,8 +23,8 @@
 #AutoIt3Wrapper_Res_File_Add=img\repeaterBar.png, RT_RCDATA, IMG_BARREPEATER, 0
 
 #AutoIt3Wrapper_Icon=img\icon.ico
-#AutoIt3Wrapper_Res_Fileversion=0.1.1
-#AutoIt3Wrapper_Res_Productversion=0.1.1
+#AutoIt3Wrapper_Res_Fileversion=0.1.3
+#AutoIt3Wrapper_Res_Productversion=0.1.3
 #AutoIt3Wrapper_Res_Field=ProductName|Intermix Repeater
 #AutoIt3Wrapper_Res_LegalCopyright=GPL3
 #AutoIt3Wrapper_Res_Description=Automated setup for the UltraVNC Repeater
@@ -69,7 +69,7 @@ Global $g_sLabel_Title = "REPEATER"
 Global $g_sProgramTitle = "INTERMIX REPEATER - SETUP"
 Global $g_sProgramName = "INTERMIX REPEATER"
 
-Global $g_sDisclaimerVersion = "0.1.1 A"
+Global $g_sDisclaimerVersion = "0.1.3 A"
 
 Global $g_hMainGui = ""
 Global $g_idButtonInstall = ""
